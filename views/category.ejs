@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Noto+Sans+JP:wght@400;700&family=Poppins:wght@400;600&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="/styles/main.css" />
+    <title>ReccoFlix</title>
+</head>
+
+<body>
+    <div class="container">
+        <%- include("partials/header.ejs") %>
+            <div class="main-content-wrapper">
+                <div class="category-sidebar">
+                    <h3 class="sidebar-heading">Categories</h3>
+                    <div class="category-list">
+
+                        <form action="/browse" method="post">
+                            <button type="submit" class="category-tab" name="action">Action</button>
+                        </form>
+
+                        <form action="/browse" method="post">
+                            <button type="submit" class="category-tab" name="adventure">Adventure</button>
+                        </form>
+
+                        <form action="/browse" method="post">
+                            <button type="submit" class="category-tab" name="scifi">Sci-Fi</button>
+                        </form>
+
+                        <form action="/browse" method="post">
+                            <button type="submit" class="category-tab" name="fantasy">Fantasy</button>
+                        </form>
+
+                        <form action="/browse" method="post">
+                            <button type="submit" class="category-tab" name="drama">Drama</button>
+                        </form>
+
+                        <form action="/browse" method="post">
+                            <button type="submit" class="category-tab" name="comedy">Comedy</button>
+                        </form>
+
+                        <form action="/browse" method="post">
+                            <button type="submit" class="category-tab" name="mystery">Mystery</button>
+                        </form>
+
+                        <form action="/browse" method="post">
+                            <button type="submit" class="category-tab" name="thriller">Thriller</button>
+                        </form>
+
+                        <form action="/browse" method="post">
+                            <button type="submit" class="category-tab" name="sports">Sports</button>
+                        </form>
+
+                        <form action="/browse" method="post">
+                            <button type="submit" class="category-tab" name="romance">Romance</button>
+                        </form>
+
+                        <form action="/browse" method="post">
+                            <button type="submit" class="category-tab" name="slice of life">Slice of Life</button>
+                        </form>
+
+                        <form action="/browse" method="post">
+                            <button type="submit" class="category-tab" name="historical">Historical</button>
+                        </form>
+
+                    </div>
+                </div>
+            </div>
+            <%- include("partials/footer.ejs") %>
+    </div>
+    <script src="js/main.js"></script>
+</body>
+
+</html>

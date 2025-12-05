@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ReccoFlix</title>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Noto+Sans+JP:wght@400;700&family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/styles/main.css" />
+</head>
+<body>
+    <div class="container">
+        <%- include("partials/header.ejs") %>
+            <div class="description-content">
+                <div class="desc-img">
+                    <% for (let i = 0; i < desc.length; i++) { %>
+                        <% if(desc[i].attributes.canonicalTitle === anime){ %>
+                            <img src="<%= desc[i].attributes.posterImage.tiny %>" alt="<%= desc[i].attributes.titles.en || 'Anime Poster' %>">
+                        <% } %>
+                        
+                    <% } %>
+                </div>
+                <div class="desc-about">
+
+                </div>
+                <div class="desc-about">
+
+                </div>
+            </div>
+        <%- include("partials/footer.ejs") %>
+    </div>
+    <script src="js/main.js"></script>
+</body>
+</html>
