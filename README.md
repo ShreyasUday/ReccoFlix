@@ -33,18 +33,18 @@ The application integrates with the **Kitsu REST API** to fetch and display real
 
 ## 📁 Folder Structure
 
-📦 ReccoFlix
-┣ 📁 public
-┃ ┣ 📁 styles
-┃ ┗ 📁 js
-┣ 📁 views
-┃ ┣ 📁 partials
-┃ ┣ 📝 home.ejs
-┃ ┣ 📝 browse.ejs
-┃ ┗ 📝 search.ejs
-┣ 📝 server.js
-┣ 📝 index.js
-┣ 📝 package.json
+📦 ReccoFlix  
+┣ 📁 public  
+┃ ┣ 📁 styles  
+┃ ┗ 📁 js  
+┣ 📁 views  
+┃ ┣ 📁 partials  
+┃ ┣ 📝 home.ejs  
+┃ ┣ 📝 browse.ejs  
+┃ ┗ 📝 search.ejs  
+┣ 📝 server.js  
+┣ 📝 index.js  
+┣ 📝 package.json  
 ┗ 📝 README.md
 
 ---
