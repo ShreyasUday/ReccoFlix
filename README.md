@@ -33,17 +33,19 @@ The application integrates with the **Kitsu REST API** to fetch and display real
 
 ## 📁 Folder Structure
 
-ReccoFlix/
-│── public/ # Static assets (CSS, JS, fonts)
-│── views/ # EJS templates
-│ ├── partials/ # Shared UI components
-│ ├── home.ejs
-│ ├── browse.ejs
-│ └── ...
-│── server.js # Express server
-│── index.js # App entry
-│── package.json
-└── README.md
+📦 ReccoFlix
+┣ 📁 public
+┃ ┣ 📁 styles
+┃ ┗ 📁 js
+┣ 📁 views
+┃ ┣ 📁 partials
+┃ ┣ 📝 home.ejs
+┃ ┣ 📝 browse.ejs
+┃ ┗ 📝 search.ejs
+┣ 📝 server.js
+┣ 📝 index.js
+┣ 📝 package.json
+┗ 📝 README.md
 
 ---
 
@@ -74,17 +76,17 @@ npm start
 
 📌 What This Project Demonstrates — Backend Skills
 
- REST API Integration
- Server-side Rendering
- Route Handling & Dynamic Views
- Backend Architecture & Modular Folder Structure
+ REST API Integration  
+ Server-side Rendering  
+ Route Handling & Dynamic Views  
+ Backend Architecture & Modular Folder Structure  
  Passing API data from server → view → UI
 
 🧭 Roadmap
 
- Anime description pages
- JWT authentication
- Watchlist or favorites feature
+ Anime description pages  
+ JWT authentication  
+ Watchlist or favorites feature  
  Deployment to Render / Railway
 
  🤝 Contributions
