@@ -70,29 +70,22 @@ npm install
 npm start
 
 ➡ The app will run at http://localhost:3000
+```
 
 📌 What This Project Demonstrates — Backend Skills
 
-REST API Integration
-
-Server-side Rendering
-
-Route Handling & Dynamic Views
-
-Backend Architecture & Modular Folder Structure
-
-Passing API data from server → view → UI
+ REST API Integration
+ Server-side Rendering
+ Route Handling & Dynamic Views
+ Backend Architecture & Modular Folder Structure
+ Passing API data from server → view → UI
 
 🧭 Roadmap
 
  Anime description pages
-
  JWT authentication
-
  Watchlist or favorites feature
-
  Deployment to Render / Railway
-
 
  🤝 Contributions
 
