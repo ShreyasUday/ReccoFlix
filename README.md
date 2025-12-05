@@ -1,96 +1,100 @@
-ReccoFlix — Anime Discovery Platform
+# 🎥 ReccoFlix — Anime Discovery Platform
 
-A backend-driven anime discovery platform built using Node.js, Express, and server-side rendering with EJS, integrated with the Kitsu REST API to fetch and display real-time anime data with dynamic routing and UI templating.
+ReccoFlix is a **backend-driven anime discovery platform** built using **Node.js**, **Express**, and **EJS (server-side rendering)**.  
+The application integrates with the **Kitsu REST API** to fetch and display real-time anime data with dynamic routing and UI templating.
 
-🚀 Features
+---
 
-Search anime by keyword using backend API calls
+## 🚀 Features
 
-Filter and browse by category
+- 🔎 Search anime by keyword using backend API calls  
+- 🗂 Filter and browse anime by category  
+- 🧱 Server-side rendering using EJS templates  
+- 🧩 Modular route and view structure for scalability  
+- 🛠 Planned Enhancements:
+  - Anime detail pages
+  - Authentication (Sign-in / Sign-up)
+  - User favorites / watchlist
 
-Dynamic server-side rendering using EJS templates
+---
 
-Organized route and view architecture for scalable expansion
+## 🧰 Tech Stack
 
-Future support planned for:
+| Category | Tools |
+|---------|------|
+| Runtime | Node.js |
+| Framework | Express.js |
+| Template Engine | EJS |
+| External API | Kitsu REST API |
+| Styling | CSS |
+| Version Control | Git & GitHub |
 
-Anime detail pages
+---
 
-Authentication flow (Sign-in/Sign-up)
+## 📁 Folder Structure
 
-User favorites or watchlist
-
-🧰 Tech Stack
-Category	Tools
-Runtime	Node.js
-Framework	Express.js
-Template Engine	EJS
-External API	Kitsu REST API
-Styling	CSS
-Version Control	Git & GitHub
-📁 Folder Structure
 ReccoFlix/
-│── public/              # Static assets (CSS, JS, fonts)
-│── views/               # EJS templates
-│   ├── partials/        # Shared UI components
-│   ├── home.ejs
-│   ├── browse.ejs
-│   └── ...
-│── server.js            # Express server
-│── index.js             # App entry
+│── public/ # Static assets (CSS, JS, fonts)
+│── views/ # EJS templates
+│ ├── partials/ # Shared UI components
+│ ├── home.ejs
+│ ├── browse.ejs
+│ └── ...
+│── server.js # Express server
+│── index.js # App entry
 │── package.json
 └── README.md
 
-🔗 API Used
+---
 
-Kitsu API — A public anime data REST service
-Documentation: https://kitsu.docs.apiary.io/
+## 🔗 API Used
 
-⚙ How to Run Locally
+- **Kitsu REST API** — Public anime information service  
+📄 Docs → https://kitsu.docs.apiary.io/
 
-Clone repository:
+---
 
+## ⚙ How to Run Locally
+
+```bash
+# Clone the repository
 git clone https://github.com/<your-username>/ReccoFlix.git
 
+# Navigate to folder
+cd ReccoFlix
 
-Install dependencies:
-
+# Install dependencies
 npm install
 
-
-Start server:
-
+# Run the server
 npm start
 
+➡ The app will run at http://localhost:3000
 
-App will run at:
+📌 What This Project Demonstrates — Backend Skills
 
-➡ http://localhost:3000
+REST API Integration
 
-📌 What This Project Demonstrates (Backend Skills)
+Server-side Rendering
 
-Working with external REST API integration
+Route Handling & Dynamic Views
 
-Server-side rendering logic
+Backend Architecture & Modular Folder Structure
 
-Route handling & dynamic view population
+Passing API data from server → view → UI
 
-Backend architecture structuring
+🧭 Roadmap
 
-Passing API data from backend → template → UI
+ Anime description pages
 
-📍 Roadmap (Planned Enhancements)
+ JWT authentication
 
-Complete anime description page
+ Watchlist or favorites feature
 
-Add authentication middleware (JWT planned)
+ Deployment to Render / Railway
 
-Add user watchlist stored in database
 
-Deploy to Render / Railway for public access
+ 🤝 Contributions
 
-🤝 Contributions
-
-Feel free to fork and submit PRs if you'd like to enhance UI, routing, or API capabilities.
-
-⭐ If you like this project, don't forget to star the repo!
+Contributions are welcome!
+Feel free to fork this project and submit PRs to enhance UI, routing, or API capabilities.
