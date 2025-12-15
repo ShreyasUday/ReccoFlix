@@ -33,14 +33,43 @@ The application allows users to track their anime journey by categorizing titles
 ## Folder Structure
 ```
 ReccoFlix
-├── index.js
-├── db.js
-├── package.json
+├── node_modules
 ├── public
+│   ├── fonts
+│   │   ├── animeace2bb_ot
+│   │   └── animeace2bb_tt
+│   │       ├── animeace2_bld.ttf
+│   │       ├── animeace2_ital.ttf
+│   │       └── animeace2_reg.ttf
 │   ├── js
+│   │   └── main.js
 │   └── styles
-└── views
-    └── partials
+│       └── main.css
+├── views
+│   ├── partials
+│   │   ├── footer.ejs
+│   │   └── header.ejs
+│   ├── about.ejs
+│   ├── browse.ejs
+│   ├── category.ejs
+│   ├── description.ejs
+│   ├── home.ejs
+│   ├── login.ejs
+│   ├── privacy.ejs
+│   ├── profile.ejs
+│   ├── register.ejs
+│   ├── search.ejs
+│   └── terms.ejs
+├── .env
+├── .env.example
+├── .gitignore
+├── db.js
+├── index.js
+├── package-lock.json
+├── package.json
+├── README.md
+├── schema.sql
+└── update_schema.js
 ```
 ## Installation & Setup
 Follow these steps to set up the project locally.
