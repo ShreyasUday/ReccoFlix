@@ -4,7 +4,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Noto+Sans+JP:wght@400;700&family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Noto+Sans+JP:wght@400;700&family=Poppins:wght@400;600&display=swap"
+    rel="stylesheet">
   <link rel="stylesheet" href="/styles/main.css" />
   <title>ReccoFlix</title>
 </head>
@@ -25,18 +27,37 @@
       </div>
     </div> -->
     <%- include("partials/header.ejs") %>
-    <div class="main-content-wrapper">
-      <div class="content">
-        <% for (let i=0; i < items.length; i++) { %>
-          <div class="anime-card">
-            <img src="<%= items[i].attributes.posterImage.small %>" alt="<%= items[i].attributes.titles.en || 'Anime Poster' %>">
-            <p class="anime-title"><%= items[i].attributes.canonicalTitle %></p>
+      <div class="main-content-wrapper">
+        <div class="content">
+          <% for (let i=0; i < items.length; i++) { %>
+            <div class="anime-card">
+              <img src="<%= items[i].attributes.posterImage.small %>"
+                alt="<%= items[i].attributes.titles.en || 'Anime Poster' %>">
+              <p class="anime-title" data-anime="<%= items[i].attributes.canonicalTitle %>">
+                <%= items[i].attributes.canonicalTitle %>
+              </p>
+
+            </div>
+            <% } %>
+        </div>
+
+        <!-- PAGINATION -->
+        <% if (locals.category) { %>
+          <div class="pagination-container">
+            <% if (currentOffset> 0) { %>
+              <a href="/browse?category=<%= category %>&offset=<%= prevOffset %>" class="pagination-btn">Previous</a>
+              <% } %>
+
+                <% if (items.length===20) { %>
+                  <a href="/browse?category=<%= category %>&offset=<%= nextOffset %>" class="pagination-btn">Next</a>
+                  <% } %>
           </div>
           <% } %>
-        </div>
+
       </div>
-    <%- include("partials/footer.ejs") %>
+      <%- include("partials/footer.ejs") %>
   </div>
   <script src="js/main.js"></script>
 </body>
+
 </html>

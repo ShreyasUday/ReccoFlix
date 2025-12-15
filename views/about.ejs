@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Noto+Sans+JP:wght@400;700&family=Poppins:wght@400;600&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="/styles/main.css" />
+    <title>About - ReccoFlix</title>
+</head>
+
+<body>
+    <div class="container">
+        <%- include('partials/header') %>
+
+            <div class="main-content-wrapper" style="min-height: 80vh; justify-content: center; padding: 0 1.5rem;">
+                <div style="max-width: 800px; text-align: center; color: #e0e0e0; margin-top: 2rem;">
+                    <h1 style="font-size: 3rem; margin-bottom: 1rem; color: #fff;">About ReccoFlix</h1>
+                    <p style="font-size: 1.2rem; line-height: 1.6; margin-bottom: 2rem;">
+                        Your ultimate destination for discovering your next favorite anime.
+                    </p>
+
+                    <div
+                        style="background: rgba(255, 255, 255, 0.05); padding: 2rem; border-radius: 12px; margin-bottom: 2rem; border: 1px solid rgba(255,255,255,0.1);margin-left: 10px;margin-right: 10px;">
+                        <h2 style="font-size: 1.8rem; margin-bottom: 1rem; color: #fff;">Our Mission</h2>
+                        <p
+                            style="font-size: 1rem; opacity: 0.9; line-height: 1.6;margin-left: 10px;margin-right: 10px;">
+                            ReccoFlix was built to solve the paralysis of choice. With thousands of anime titles out
+                            there, finding something that truly resonates with you can be difficult. Our platform
+                            simplifies discovery, bringing you curated recommendations, trending lists, and
+                            comprehensive details—all in one place.
+                        </p>
+                    </div>
+
+                    <div
+                        style="background: rgba(255, 255, 255, 0.05); padding: 2rem; border-radius: 12px; margin-bottom: 2rem; border: 1px solid rgba(255,255,255,0.1);margin-left: 10px;margin-right: 10px;">
+                        <h2 style="font-size: 1.8rem; margin-bottom: 1rem; color: #fff;">Powered by Kitsu</h2>
+                        <p style="font-size: 1rem; opacity: 0.9; line-height: 1.6;">
+                            We leverage the powerful Kitsu API to provide accurate, real-time data on anime series,
+                            movies, and franchises. This ensures you always have the latest synopses, ratings, and
+                            episode counts at your fingertips.
+                        </p>
+                    </div>
+
+                    <div style="margin-top: 3rem;">
+                        <p style="font-size: 0.9rem; opacity: 0.7;margin-left: 10px;margin-right: 10px;">
+                            ReccoFlix is an open-source project.
+                            <a href="https://github.com/ShreyasUday/ReccoFlix" target="_blank"
+                                style="color: #ff9800; text-decoration: none; font-weight: 600;">Check us out on
+                                GitHub</a>
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <%- include('partials/footer') %>
+    </div>
+    <script src="/js/main.js"></script>
+</body>
+
+</html>

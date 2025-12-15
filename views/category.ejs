@@ -15,60 +15,58 @@
     <div class="container">
         <%- include("partials/header.ejs") %>
             <div class="main-content-wrapper">
-                <div class="category-sidebar">
-                    <h3 class="sidebar-heading">Categories</h3>
-                    <div class="category-list">
 
-                        <form action="/browse" method="post">
-                            <button type="submit" class="category-tab" name="action">Action</button>
-                        </form>
-
-                        <form action="/browse" method="post">
-                            <button type="submit" class="category-tab" name="adventure">Adventure</button>
-                        </form>
-
-                        <form action="/browse" method="post">
-                            <button type="submit" class="category-tab" name="scifi">Sci-Fi</button>
-                        </form>
-
-                        <form action="/browse" method="post">
-                            <button type="submit" class="category-tab" name="fantasy">Fantasy</button>
-                        </form>
-
-                        <form action="/browse" method="post">
-                            <button type="submit" class="category-tab" name="drama">Drama</button>
-                        </form>
-
-                        <form action="/browse" method="post">
-                            <button type="submit" class="category-tab" name="comedy">Comedy</button>
-                        </form>
-
-                        <form action="/browse" method="post">
-                            <button type="submit" class="category-tab" name="mystery">Mystery</button>
-                        </form>
-
-                        <form action="/browse" method="post">
-                            <button type="submit" class="category-tab" name="thriller">Thriller</button>
-                        </form>
-
-                        <form action="/browse" method="post">
-                            <button type="submit" class="category-tab" name="sports">Sports</button>
-                        </form>
-
-                        <form action="/browse" method="post">
-                            <button type="submit" class="category-tab" name="romance">Romance</button>
-                        </form>
-
-                        <form action="/browse" method="post">
-                            <button type="submit" class="category-tab" name="slice of life">Slice of Life</button>
-                        </form>
-
-                        <form action="/browse" method="post">
-                            <button type="submit" class="category-tab" name="historical">Historical</button>
-                        </form>
-
-                    </div>
+                <!-- CATEGORY GRID SECTION -->
+                <div class="category-page-header">
+                    <h2>Browse Categories</h2>
                 </div>
+
+                <div class="category-grid">
+                    <% const categories=[ { name: "Action" , icon: "⚔️" }, { name: "Adventure" , icon: "🧭" }, {
+                        name: "Sci-Fi" , icon: "🚀" }, { name: "Fantasy" , icon: "🧙‍♂️" }, { name: "Drama" , icon: "🎭"
+                        }, { name: "Comedy" , icon: "😂" }, { name: "Mystery" , icon: "🔍" }, { name: "Thriller" ,
+                        icon: "😱" }, { name: "Sports" , icon: "⚽" }, { name: "Romance" , icon: "💖" }, {
+                        name: "Slice of Life" , icon: "🍃" }, { name: "Historical" , icon: "📜" }, { name: "Horror" ,
+                        icon: "👻" }, { name: "Music" , icon: "🎵" }, { name: "Supernatural" , icon: "🔮" } ]; %>
+                        <% categories.forEach(cat=> { %>
+                            <form action="/browse" method="post" class="category-form">
+                                <button type="submit" class="category-card" name="<%= cat.name.toLowerCase() %>">
+                                    <span class="cat-icon">
+                                        <%= cat.icon %>
+                                    </span>
+                                    <span class="cat-name">
+                                        <%= cat.name %>
+                                    </span>
+                                </button>
+                            </form>
+                            <% }) %>
+                </div>
+
+                <!-- TRENDING SECTION -->
+                <div class="trending-section">
+                    <h2 class="section-title">Trending Now</h2>
+
+                    <% if (trending && trending.length> 0) { %>
+                        <div class="carousel-wrapper">
+                            <button class="carousel-btn left-btn">❮</button>
+                            <div class="related-container">
+                                <% trending.forEach(item=> { %>
+                                    <div class="related-card" data-anime="<%= item.attributes.canonicalTitle %>">
+                                        <img
+                                            src="<%= (item.attributes.posterImage && item.attributes.posterImage.small) ? item.attributes.posterImage.small : 'https://via.placeholder.com/150' %>" />
+                                        <p>
+                                            <%= item.attributes.canonicalTitle %>
+                                        </p>
+                                    </div>
+                                    <% }) %>
+                            </div>
+                            <button class="carousel-btn right-btn">❯</button>
+                        </div>
+                        <% } else { %>
+                            <p class="no-content">No trending anime available at the moment.</p>
+                            <% } %>
+                </div>
+
             </div>
             <%- include("partials/footer.ejs") %>
     </div>

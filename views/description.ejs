@@ -1,33 +1,241 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ReccoFlix</title>
-    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Noto+Sans+JP:wght@400;700&family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>
+        <%= desc.attributes.canonicalTitle %> | ReccoFlix
+    </title>
     <link rel="stylesheet" href="/styles/main.css" />
 </head>
+
 <body>
     <div class="container">
+
         <%- include("partials/header.ejs") %>
-            <div class="description-content">
-                <div class="desc-img">
-                    <% for (let i = 0; i < desc.length; i++) { %>
-                        <% if(desc[i].attributes.canonicalTitle === anime){ %>
-                            <img src="<%= desc[i].attributes.posterImage.tiny %>" alt="<%= desc[i].attributes.titles.en || 'Anime Poster' %>">
-                        <% } %>
-                        
-                    <% } %>
-                </div>
-                <div class="desc-about">
 
-                </div>
-                <div class="desc-about">
+            <!-- MAIN DESCRIPTION SECTION -->
+            <div class="anime-description-container">
 
+                <div class="anime-description-poster">
+                    <img src="<%= desc.attributes.posterImage.large %>" alt="<%= desc.attributes.canonicalTitle %>" />
+                </div>
+
+                <div class="anime-description-content">
+
+                    <h1 class="anime-description-title">
+                        <%= desc.attributes.canonicalTitle %>
+                    </h1>
+
+                    <div class="anime-description-meta">
+                        ⭐ Rating: <%= desc.attributes.averageRating || "N/A" %> <br />
+                            🎞 Episodes: <%= desc.attributes.episodeCount || "Unknown" %> <br />
+                                📅 Release: <%= desc.attributes.startDate || "Unknown" %> <br />
+                                    🎬 Status: <%= desc.attributes.status %> <br />
+                                        🧪 Type: <%= desc.attributes.subtype %>
+                    </div>
+
+                    <p class="anime-description-synopsis">
+                        <%= desc.attributes.synopsis %>
+                    </p>
+
+                    <div class="watch-buttons">
+                        <a href="https://www.crunchyroll.com/search?q=<%= anime %>" target="_blank"
+                            class="watch-btn crunchyroll">Watch on Crunchyroll</a>
+
+                        <% if (typeof user !=='undefined' && user) { %>
+                            <div
+                                class="custom-select-wrapper <%= userAnimeStatus ? 'has-status ' + userAnimeStatus : '' %>">
+                                <form action="/library/add" method="POST" class="library-form">
+                                    <input type="hidden" name="anime_id" value="<%= desc.id %>">
+                                    <input type="hidden" name="anime_title"
+                                        value="<%= desc.attributes.canonicalTitle %>">
+                                    <input type="hidden" name="poster_image"
+                                        value="<%= desc.attributes.posterImage ? desc.attributes.posterImage.small : 'https://via.placeholder.com/150' %>">
+
+                                    <input type="hidden" name="status" id="statusInput"
+                                        value="<%= userAnimeStatus || '' %>">
+
+                                    <div class="custom-select-trigger" tabindex="0">
+                                        <span class="trigger-text">
+                                            <% if (userAnimeStatus) { %>
+                                                <%= userAnimeStatus==='planned' ? 'Plan to Watch' :
+                                                    userAnimeStatus.charAt(0).toUpperCase() +
+                                                    userAnimeStatus.slice(1).replace('_', ' ' ) %>
+                                                    <% } else { %>
+                                                        Add to Library
+                                                        <% } %>
+                                        </span>
+                                        <span class="trigger-arrow">▼</span>
+                                    </div>
+                                    <div class="custom-options">
+                                        <div class="custom-option" data-value="planned">Plan to Watch</div>
+                                        <div class="custom-option" data-value="watching">Watching</div>
+                                        <div class="custom-option" data-value="completed">Completed</div>
+                                        <div class="custom-option" data-value="on_hold">On Hold</div>
+                                        <div class="custom-option" data-value="dropped">Dropped</div>
+                                        <% if (userAnimeStatus) { %>
+                                            <div class="custom-option remove-option" data-value="remove">Remove</div>
+                                            <% } else { %>
+                                                <div class="custom-option remove-option" data-value="remove"
+                                                    style="display: none;">Remove</div>
+                                                <% } %>
+                                    </div>
+                                    <button type="button" class="add-btn <%= userAnimeStatus ? 'btn-active' : '' %>">
+                                        <%= userAnimeStatus ? '✓' : '+' %>
+                                    </button>
+                                </form>
+                            </div>
+                            <% } else { %>
+                                <a href="/login" class="watch-btn" style="background-color: #333;">Login to Add</a>
+                                <% } %>
+                    </div>
                 </div>
             </div>
-        <%- include("partials/footer.ejs") %>
+
+            <!-- AJAX Script for Library Add -->
+            <script>
+                document.addEventListener('DOMContentLoaded', () => {
+                    const addBtns = document.querySelectorAll('.add-btn');
+                    addBtns.forEach(btn => {
+                        if (btn.dataset.bound) return;
+                        btn.dataset.bound = true;
+
+                        btn.addEventListener('click', async (e) => {
+                            e.preventDefault();
+                            const wrapper = btn.closest('.custom-select-wrapper');
+                            const form = wrapper.querySelector('.library-form');
+                            const triggerSpan = wrapper.querySelector('.trigger-text');
+                            const input = wrapper.querySelector('#statusInput');
+                            const removeOption = wrapper.querySelector('.remove-option');
+
+                            const formData = new FormData(form);
+                            const data = Object.fromEntries(formData.entries());
+                            const statusValue = data.status;
+
+                            // -- RESET CLASSES --
+                            btn.classList.remove('btn-success', 'btn-remove');
+
+                            if (statusValue === 'remove') {
+                                // === REMOVE FLOW ===
+                                try {
+                                    const response = await fetch('/library/remove', {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                                        body: JSON.stringify({ anime_id: data.anime_id })
+                                    });
+
+                                    if (response.ok) {
+                                        // Animation
+                                        btn.innerHTML = '✕';
+                                        btn.classList.add('btn-remove');
+
+                                        // Reset Logic
+                                        setTimeout(() => {
+                                            wrapper.className = 'custom-select-wrapper'; // Remove all status classes
+                                            triggerSpan.textContent = 'Add to Library';
+                                            input.value = '';
+                                            btn.innerHTML = '+';
+                                            btn.classList.remove('btn-remove');
+                                            if (removeOption) removeOption.style.display = 'none';
+                                        }, 1000);
+                                    }
+                                } catch (err) { console.error(err); }
+                            } else {
+                                // === ADD / UPDATE FLOW ===
+                                if (!statusValue) return; // Don't add if empty
+
+                                try {
+                                    const response = await fetch('/library/add', {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                                        body: JSON.stringify(data)
+                                    });
+
+                                    if (response.ok) {
+                                        // Animation
+                                        btn.innerHTML = '✓';
+                                        btn.classList.add('btn-success');
+
+                                        // Update Wrapper Color Class
+                                        wrapper.className = `custom-select-wrapper has-status ${statusValue}`;
+
+                                        // Show Remove option
+                                        if (removeOption) removeOption.style.display = 'block';
+
+                                        setTimeout(() => {
+                                            btn.innerHTML = '✓'; // Keep check or revert? User said "resets". 
+                                            // Let's keep check for a bit then revert to + or keep check?
+                                            // Usually check implies "Saved". Let's revert to + or check?
+                                            // User said "Button resets to normal state".
+                                            btn.classList.remove('btn-success');
+                                            btn.innerHTML = '✓'; // Keep check to show "Saved" state? Or revert to +?
+                                            // actually "Add to Library" button usually changes to "Edit" or just stays.
+                                            // Let's revert icon to allow further edits, but color stays on wrapper.
+                                            setTimeout(() => btn.innerHTML = '✓', 0); // Keep check
+                                        }, 1000);
+                                    }
+                                } catch (err) { console.error(err); }
+                            }
+                        });
+                    });
+                });
+            </script>
+
+
+
+
+            <!-- FRANCHISE SECTION -->
+            <h2 class="related-title">
+                More from the <%= desc.attributes.canonicalTitle.split(/[(:]/)[0] %> Universe
+            </h2>
+
+            <% if (franchise.length===0) { %>
+                <p class="no-content">No additional content found.</p>
+                <% } else { %>
+                    <div class="carousel-wrapper">
+                        <button class="carousel-btn left-btn">❮</button>
+                        <div class="related-container">
+                            <% franchise.forEach(item=> { %>
+                                <div class="related-card" data-anime="<%= item.attributes.canonicalTitle %>">
+                                    <img
+                                        src="<%= (item.attributes.posterImage && item.attributes.posterImage.small) ? item.attributes.posterImage.small : 'https://via.placeholder.com/150' %>" />
+                                    <p>
+                                        <%= item.attributes.canonicalTitle %>
+                                    </p>
+                                </div>
+                                <% }) %>
+                        </div>
+                        <button class="carousel-btn right-btn">❯</button>
+                    </div>
+                    <% } %>
+
+
+
+                        <!-- RELATED ANIME -->
+                        <h2 class="related-title">Related Anime</h2>
+
+                        <div class="carousel-wrapper">
+                            <button class="carousel-btn left-btn">❮</button>
+                            <div class="related-container">
+                                <% related.forEach(item=> { %>
+                                    <div class="related-card" data-anime="<%= item.attributes.canonicalTitle %>">
+                                        <img
+                                            src="<%= (item.attributes.posterImage && item.attributes.posterImage.small) ? item.attributes.posterImage.small : 'https://via.placeholder.com/150' %>" />
+                                        <p>
+                                            <%= item.attributes.canonicalTitle %>
+                                        </p>
+                                    </div>
+                                    <% }) %>
+                            </div>
+                            <button class="carousel-btn right-btn">❯</button>
+                        </div>
+
+                        <%- include("partials/footer.ejs") %>
     </div>
-    <script src="js/main.js"></script>
+
+    <script src="/js/main.js"></script>
 </body>
+
 </html>

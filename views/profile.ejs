@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Profile | ReccoFlix</title>
+    <link rel="stylesheet" href="/styles/main.css">
+
+</head>
+
+<body>
+    <%- include('partials/header.ejs') %>
+
+        <div class="profile-container">
+            <div class="profile-header">
+                <div class="profile-avatar-large">
+                    <%= user.name ? user.name.charAt(0).toUpperCase() : 'U' %>
+                </div>
+                <div class="profile-info">
+                    <h1>
+                        <%= user.name %>
+                    </h1>
+                    <p>
+                        <%= user.email %>
+                    </p>
+                </div>
+                <a href="/logout" class="logout-btn">Logout</a>
+            </div>
+
+            <div class="library-tabs">
+                <button class="tab-btn active" onclick="openTab('planned','event')">Plan to Watch</button>
+                <button class="tab-btn" onclick="openTab('watching')">Watching</button>
+                <button class="tab-btn" onclick="openTab('completed')">Completed</button>
+                <button class="tab-btn" onclick="openTab('on_hold')">On Hold</button>
+                <button class="tab-btn" onclick="openTab('dropped')">Dropped</button>
+            </div>
+
+            <% const statuses=['planned', 'watching' , 'completed' , 'on_hold' , 'dropped' ]; statuses.forEach((status,
+                index)=> {
+                const items = library.filter(item => item.status === status);
+                %>
+                <div id="<%= status %>" class="library-grid <%= index === 0 ? 'active' : '' %>">
+                    <% if (items.length===0) { %>
+                        <div style="grid-column: 1 / -1; width: 100%; display: flex; justify-content: center;">
+                            <div class="empty-state">
+                                <span>📂</span>
+                                <p>No anime in this list yet.</p>
+                                <a href="/category"
+                                    style="color: #e0e0e0; text-decoration: underline; margin-top: 10px;">Browse anime
+                                    to add
+                                    some!</a>
+                            </div>
+                        </div>
+                        <% } else { %>
+                            <% items.forEach(item=> { %>
+                                <div class="library-card-wrapper">
+                                    <button class="remove-btn" data-anime-id="<%= item.anime_id %>">×</button>
+                                    <a href="/description?anime=<%= encodeURIComponent(item.anime_title) %>"
+                                        style="text-decoration: none; color: inherit; display: block; height: 100%;">
+                                        <div class="library-card">
+                                            <img src="<%= item.poster_image %>" alt="<%= item.anime_title %>">
+                                            <div class="library-info">
+                                                <h3 class="library-title">
+                                                    <%= item.anime_title %>
+                                                </h3>
+                                            </div>
+                                        </div>
+                                    </a>
+                                </div>
+                                <% }) %>
+                                    <% } %>
+                </div>
+                <% }) %>
+        </div>
+
+        <!-- Custom Confirmation Modal -->
+        <div id="confirmationModal" class="modal-overlay">
+            <div class="modal-box">
+                <h3>Remove Anime?</h3>
+                <p>Are you sure you want to remove this anime from your library?</p>
+                <div class="modal-actions">
+                    <button id="cancelRemoveBtn" class="modal-btn cancel">Cancel</button>
+                    <button id="confirmRemoveBtn" class="modal-btn remove">Remove</button>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            function openTab(status) {
+                // Hide all grids
+                document.querySelectorAll('.library-grid').forEach(grid => {
+                    grid.classList.remove('active');
+                });
+                // Deactivate all buttons
+                document.querySelectorAll('.tab-btn').forEach(btn => {
+                    btn.classList.remove('active');
+                });
+
+                // Show selected grid and activate button
+                const grid = document.getElementById(status);
+                if (grid) grid.classList.add('active'); // Added check if ID exists
+                // Find the button that triggered this tab change and activate it
+                document.querySelector(`.tab-btn[onclick*='${status}']`).classList.add('active');
+            }
+
+            // Modal Logic
+            const modal = document.getElementById('confirmationModal');
+            const cancelBtn = document.getElementById('cancelRemoveBtn');
+            const confirmBtn = document.getElementById('confirmRemoveBtn');
+
+            let pendingAnimeId = null;
+            let pendingButton = null;
+
+            function showModal() {
+                modal.classList.add('show');
+            }
+
+            function hideModal() {
+                modal.classList.remove('show');
+                pendingAnimeId = null;
+                pendingButton = null;
+            }
+
+            cancelBtn.addEventListener('click', hideModal);
+
+            confirmBtn.addEventListener('click', () => {
+                if (pendingAnimeId && pendingButton) {
+                    performRemoval(pendingAnimeId, pendingButton);
+                }
+                hideModal();
+            });
+
+            // Event Delegation for Remove Button
+            document.addEventListener('click', function (event) {
+                if (event.target.classList.contains('remove-btn')) {
+                    event.preventDefault(); // crucial: prevent any bubbling to anchor
+                    event.stopImmediatePropagation();
+
+                    const btn = event.target;
+                    pendingButton = btn; // Store for later
+                    pendingAnimeId = btn.dataset.animeId; // Store for later
+
+                    showModal();
+                }
+            });
+
+            function performRemoval(animeId, btn) {
+                console.log("DEBUG: performRemoval Clicked. ID:", animeId);
+
+                fetch('/library/remove', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({ anime_id: animeId })
+                })
+                    .then(res => {
+                        console.log("DEBUG: Fetch response status:", res.status);
+                        return res.json();
+                    })
+                    .then(data => {
+                        console.log("DEBUG: Fetch response data:", data);
+                        if (data.status === 'success') {
+                            // Find the wrapper relative to the clicked button
+                            const cardWrapper = btn.closest('.library-card-wrapper');
+                            if (cardWrapper) {
+                                cardWrapper.style.transition = 'opacity 0.3s, transform 0.3s';
+                                cardWrapper.style.opacity = '0';
+                                cardWrapper.style.transform = 'scale(0.8)';
+                                setTimeout(() => cardWrapper.remove(), 300);
+                            } else {
+                                console.error("DEBUG: Could not find .library-card-wrapper to remove");
+                            }
+                        } else {
+                            alert("Failed to remove item.");
+                        }
+                    })
+                    .catch(err => console.error("DEBUG: Fetch error:", err));
+            }
+        </script>
+</body>
+
+</html>

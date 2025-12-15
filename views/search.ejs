@@ -23,11 +23,10 @@
                     </form>
                 </div>
                 <div>
-                    <% if (typeof items==='undefined' || items.length===0) { %>
-                        <h2>
-                            Sorry No Anime found
-                        </h2>
-                        <% } %>
+                    <% if (searched && items.length===0) { %>
+                        <h2>Sorry No Anime found</h2>
+                    <% } %>
+
                 </div>
             </div>
             <%- include("partials/footer.ejs") %>
