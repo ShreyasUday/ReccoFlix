@@ -94,10 +94,6 @@ The application requires the following environment variables to function correct
 3.  **Search**: Use the search bar to find specific titles.
 4.  **Add to Library**: Click on an anime card to view details, then select a status (e.g., "Watching") and click the add button to save it to your library.
 5.  **Manage Library**: Go to your Profile to see your saved anime. You can update their status or remove them.
-## Screenshots
-![Home Page Placeholder](path/to/screenshot_home.png)
-![Anime Details Placeholder](path/to/screenshot_details.png)
-![User Profile Placeholder](path/to/screenshot_profile.png)
 ## Attribution
 - **Kitsu API**: All anime data, images, and metadata are provided by the [Kitsu API](https://kitsu.io/docs/api).
 - **Google OAuth**: Authentication services provided by Google.
