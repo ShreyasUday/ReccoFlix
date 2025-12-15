@@ -8,6 +8,8 @@ import { Strategy as LocalStrategy } from "passport-local";
 import bcrypt from "bcrypt";
 import dotenv from "dotenv";
 import db from "./db.js";
+import nodemailer from "nodemailer";
+import crypto from "crypto";
 
 dotenv.config();
 
@@ -272,6 +274,135 @@ app.get("/terms", (req, res) => {
 //   console.log("Server running on http://localhost:3000");
 // });
 // ================================
+// PASSWORD RESET
+// ================================
+
+// ================================
+// PASSWORD RESET
+// ================================
+
+import { Resend } from 'resend';
+import rateLimit from 'express-rate-limit';
+
+const resend = new Resend(process.env.RESEND_API_KEY);
+
+// Security: Rate limiter for forgot password (5 requests per 15 mins)
+const forgotPasswordLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 5,
+  message: "Too many password reset requests. Please try again later.",
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+app.get("/forgot-password", (req, res) => {
+  res.render("forgot-password");
+});
+
+app.post("/forgot-password", forgotPasswordLimiter, async (req, res) => {
+  const { email } = req.body;
+  try {
+    const normalizedEmail = email.toLowerCase();
+    const result = await db.query("SELECT * FROM users WHERE email = $1", [normalizedEmail]);
+
+    // Security: Always return success message even if user doesn't exist (Enumeration Protection)
+    if (result.rows.length === 0) {
+      return res.render("forgot-password", { success: "If an account exists, a reset link has been sent." });
+    }
+
+    const user = result.rows[0];
+    const token = crypto.randomBytes(32).toString('hex'); // Increased entropy
+    const expires = Date.now() + 3600000; // 1 hour
+
+    await db.query(
+      "UPDATE users SET reset_password_token = $1, reset_password_expires = $2 WHERE id = $3",
+      [token, expires, user.id]
+    );
+
+    // Production: Use configured BASE_URL or default to localhost
+    const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
+    const resetLink = `${baseUrl}/reset-password/${token}`;
+
+    // Send Email via Resend
+    if (process.env.RESEND_API_KEY) {
+      await resend.emails.send({
+        from: 'ReccoFlix <onboarding@resend.dev>', // Update this with your verified domain in production
+        to: user.email,
+        subject: 'Reset your ReccoFlix Password',
+        html: `
+                    <p>You requested a password reset for your ReccoFlix account.</p>
+                    <p>Click the link below to verify your email and set a new password:</p>
+                    <p><a href="${resetLink}">${resetLink}</a></p>
+                    <p>This link expires in 1 hour.</p>
+                    <p>If you didn't request this, please ignore this email.</p>
+                `
+      });
+    } else {
+      console.warn("[WARN] RESEND_API_KEY missing. Email not sent.");
+    }
+
+    res.render("forgot-password", { success: "If an account exists, a reset link has been sent." });
+
+  } catch (err) {
+    console.error("Forgot Password Error:", err);
+    res.render("forgot-password", { error: "Something went wrong. Please try again." });
+  }
+});
+
+app.get("/reset-password/:token", async (req, res) => {
+  try {
+    const result = await db.query(
+      "SELECT * FROM users WHERE reset_password_token = $1 AND reset_password_expires > $2",
+      [req.params.token, Date.now()]
+    );
+
+    if (result.rows.length === 0) {
+      return res.render("forgot-password", { error: "Password reset token is invalid or has expired." });
+    }
+
+    res.render("reset-password", { token: req.params.token });
+  } catch (err) {
+    console.error(err);
+    res.redirect("/forgot-password");
+  }
+});
+
+app.post("/reset-password/:token", async (req, res) => {
+  try {
+    const result = await db.query(
+      "SELECT * FROM users WHERE reset_password_token = $1 AND reset_password_expires > $2",
+      [req.params.token, Date.now()]
+    );
+
+    if (result.rows.length === 0) {
+      return res.render("forgot-password", { error: "Password reset token is invalid or has expired." });
+    }
+
+    const user = result.rows[0];
+    const password = req.body.password;
+    const confirm = req.body['confirm-password'];
+
+    if (password !== confirm) {
+      return res.render("reset-password", { token: req.params.token, error: "Passwords do not match." });
+    }
+
+    bcrypt.hash(password, 10, async (err, hash) => {
+      if (err) throw err;
+      await db.query(
+        "UPDATE users SET password = $1, reset_password_token = NULL, reset_password_expires = NULL WHERE id = $2",
+        [hash, user.id]
+      );
+
+      res.render("login", { success: "Password successfully changed. Please log in." });
+    });
+
+  } catch (err) {
+    console.error("Reset Password Error:", err);
+    res.render("reset-password", { token: req.params.token, error: "Something went wrong." });
+  }
+});
+
+// ================================
 // AUTHENTICATION
 // ================================
 
@@ -291,14 +422,15 @@ app.get("/logout", (req, res) => {
 });
 
 app.post("/register", async (req, res) => {
-  const { name, email, password } = req.body;
+  const { name, password } = req.body;
+  const email = req.body.email.toLowerCase();
   try {
     const checkResult = await db.query("SELECT * FROM users WHERE email = $1", [
       email,
     ]);
 
     if (checkResult.rows.length > 0) {
-      res.redirect("/login");
+      res.render("register", { error: "Email already registered. Try logging in." });
     } else {
       bcrypt.hash(password, 10, async (err, hash) => {
         if (err) {
@@ -321,13 +453,22 @@ app.post("/register", async (req, res) => {
   }
 });
 
-app.post(
-  "/login",
-  passport.authenticate("local", {
-    successRedirect: "/",
-    failureRedirect: "/login",
-  })
-);
+app.post("/login", (req, res, next) => {
+  passport.authenticate("local", (err, user, info) => {
+    if (err) return next(err);
+
+    if (!user) {
+      return res.render("login", {
+        error: info.message,
+      });
+    }
+
+    req.logIn(user, (err) => {
+      if (err) return next(err);
+      return res.redirect("/");
+    });
+  })(req, res, next);
+});
 
 app.get(
   "/auth/google",
@@ -356,12 +497,18 @@ app.get(
 passport.use("local",
   new LocalStrategy({ usernameField: "email" }, async (email, password, cb) => {
     try {
+      const normalizedEmail = email.toLowerCase();
       const result = await db.query("SELECT * FROM users WHERE email = $1", [
-        email,
+        normalizedEmail,
       ]);
       if (result.rows.length > 0) {
         const user = result.rows[0];
         const storedHashedPassword = user.password;
+
+        if (!storedHashedPassword) {
+          return cb(null, false, { message: "Please log in with Google" });
+        }
+
         bcrypt.compare(password, storedHashedPassword, (err, valid) => {
           if (err) {
             console.error("Error comparing passwords:", err);
@@ -370,12 +517,12 @@ passport.use("local",
             if (valid) {
               return cb(null, user);
             } else {
-              return cb(null, false);
+              return cb(null, false, { message: "Incorrect password" });
             }
           }
         });
       } else {
-        return cb("User not found");
+        return cb(null, false, { message: "User not registered" });
       }
     } catch (err) {
       console.log(err);
@@ -395,14 +542,15 @@ passport.use(
     async (accessToken, refreshToken, profile, cb) => {
       console.log("Google Strategy Callback - Profile:", profile.email);
       try {
+        const normalizedEmail = profile.email.toLowerCase();
         const result = await db.query("SELECT * FROM users WHERE email = $1", [
-          profile.email,
+          normalizedEmail,
         ]);
         if (result.rows.length === 0) {
           console.log("Google Strategy - Creating new user");
           const newUser = await db.query(
             "INSERT INTO users (email, google_id, name) VALUES ($1, $2, $3) RETURNING *",
-            [profile.email, profile.id, profile.displayName]
+            [normalizedEmail, profile.id, profile.displayName]
           );
           return cb(null, newUser.rows[0]);
         } else {

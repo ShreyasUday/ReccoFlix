@@ -1189,6 +1189,18 @@
         font-size: 2rem;
     }
 
+    .auth-error {
+        background: rgba(229, 9, 20, 0.2);
+        border: 1px solid rgba(229, 9, 20, 0.5);
+        color: #ffcccc;
+        padding: 12px;
+        border-radius: 8px;
+        margin-bottom: 1.5rem;
+        text-align: center;
+        font-size: 0.95rem;
+        animation: fadeIn 0.3s ease;
+    }
+
     .form-group {
         margin-bottom: 1.5rem;
         text-align: left;
@@ -1198,6 +1210,28 @@
         display: block;
         margin-bottom: 0.5rem;
         color: #ccc;
+    }
+
+    .password-wrapper {
+        position: relative;
+    }
+
+    .password-toggle {
+        position: absolute;
+        top: 50%;
+        right: 10px;
+        transform: translateY(-50%);
+        background: none;
+        border: none;
+        color: #aaa;
+        cursor: pointer;
+        padding: 0;
+        display: flex;
+        align-items: center;
+    }
+
+    .password-toggle:hover {
+        color: white;
     }
 
     .form-group input {
