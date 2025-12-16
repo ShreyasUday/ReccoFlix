@@ -214,9 +214,22 @@ app.get("/description", async (req, res) => {
       `https://kitsu.io/api/edge/anime?filter[text]=${encodeURIComponent(animeName)}&page[limit]=5`
     );
 
-    const animeData = response.data.data[0];
-    if (!animeData) {
+    const results = response.data.data;
+    if (!results || results.length === 0) {
       return res.status(404).send("Anime not found");
+    }
+
+    // Smart Match: Find exact title match (case-insensitive)
+    // This fixes issues like "Naruto" -> "Naruto Shippuuden"
+    let animeData = results.find(item =>
+      item.attributes.canonicalTitle.toLowerCase() === animeName.toLowerCase() ||
+      (item.attributes.titles.en && item.attributes.titles.en.toLowerCase() === animeName.toLowerCase()) ||
+      (item.attributes.titles.en_jp && item.attributes.titles.en_jp.toLowerCase() === animeName.toLowerCase())
+    );
+
+    // Fallback to first result if no exact match
+    if (!animeData) {
+      animeData = results[0];
     }
 
     const canonical = animeData.attributes.canonicalTitle.toLowerCase();

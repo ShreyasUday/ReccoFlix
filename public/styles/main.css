@@ -17,18 +17,20 @@
         src: url('/fonts/animeace2_reg.ttf') format('truetype');
     }
 
-    body,
     html {
+        background-color: #020002;
+        /* Fixes mobile overscroll white gap */
+        height: 100%;
+    }
+
+    body {
         margin: 0;
         padding: 0;
-        background-color: #020002;
-        /* Fallback for mobile gap */
-
-        height: 100%;
         min-height: 100vh;
-
         background: linear-gradient(to bottom, rgba(52, 51, 52, 0.745), rgb(2, 0, 2));
         background-size: 400% 400%;
+        background-attachment: fixed;
+        /* Fixes scrolling issues */
         animation: grdientanimation 15s ease infinite;
         font-family: 'Poppins', sans-serif;
         color: white;
