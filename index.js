@@ -139,7 +139,18 @@ app.get("/browse", async (req, res) => {
 
   try {
     console.log(`DEBUG: Browse Request - Category: ${selectedCategory}, Offset: ${offset}`);
-    const kitsuUrl = `https://kitsu.io/api/edge/anime?filter[text]=${selectedCategory}&page[limit]=${limit}&page[offset]=${offset}&sort=-userCount`;
+    // Map UI categories to Kitsu slugs
+    const categoryMap = {
+      "scifi": "sci-fi",
+      "slice of life": "slice-of-life",
+      "science-fiction": "sci-fi"
+    };
+
+    // Use mapped slug if exists, otherwise assume the category matches (e.g. "action" -> "action")
+    const apiCategory = categoryMap[selectedCategory] || selectedCategory.replace(/ /g, '-');
+
+    // Use strict category filtering instead of text search
+    const kitsuUrl = `https://kitsu.io/api/edge/anime?filter[categories]=${apiCategory}&page[limit]=${limit}&page[offset]=${offset}&sort=-userCount`;
     console.log(`DEBUG: Kitsu URL: ${kitsuUrl}`);
 
     const response = await axios.get(kitsuUrl);
@@ -219,13 +230,61 @@ app.get("/description", async (req, res) => {
       .filter(item => item.type === 'anime' && item.attributes.canonicalTitle.toLowerCase() !== canonical);
     // END NEW LOGIC
 
-    const relatedResponse = await axios.get(
-      `https://kitsu.io/api/edge/anime?filter[subtype]=${animeData.attributes.subtype}&page[limit]=20`
-    );
+    // START IMPROVED RELATED LOGIC
+    // 1. Fetch categories (genres) for this anime
+    let related = [];
+    try {
+      // 1. Fetch more categories to sieve through
+      const categoriesResponse = await axios.get(
+        `https://kitsu.io/api/edge/anime/${animeData.id}/categories?page[limit]=15&sort=-totalMediaCount`
+      );
 
-    const related = relatedResponse.data.data.filter(item =>
+      const allCategories = categoriesResponse.data.data.map(c => c.attributes.slug);
+
+      // Generic tags to ignore for specific recommendations
+      const genericTags = [
+        "anime", "manga", "tv", "movie", "ova", "ona", "special", "music",
+        "action", "adventure", "comedy", "drama", "fantasy", "sci-fi", "science-fiction",
+        "shounen", "shoujo", "seinen", "josei", "slice-of-life"
+      ];
+
+      // Filter out generic tags
+      const specificCategories = allCategories.filter(tag => !genericTags.includes(tag));
+
+      // Use top 3 specific tags, or fallback to top 3 generic tags if none found
+      const targetTags = specificCategories.length > 0
+        ? specificCategories.slice(0, 3)
+        : allCategories.slice(0, 3);
+
+      const categoryString = targetTags.join(',');
+
+      if (categoryString) {
+        // 2. Fetch anime with matching categories
+        const relatedResponse = await axios.get(
+          `https://kitsu.io/api/edge/anime?filter[categories]=${categoryString}&sort=-userCount&page[limit]=20`
+        );
+        related = relatedResponse.data.data;
+      } else {
+        // Fallback: Same subtype if no categories found
+        const relatedResponse = await axios.get(
+          `https://kitsu.io/api/edge/anime?filter[subtype]=${animeData.attributes.subtype}&page[limit]=20`
+        );
+        related = relatedResponse.data.data;
+      }
+    } catch (err) {
+      console.log("Related anime fetch error (using fallback):", err.message);
+      // Fallback
+      const relatedResponse = await axios.get(
+        `https://kitsu.io/api/edge/anime?filter[subtype]=${animeData.attributes.subtype}&page[limit]=20`
+      );
+      related = relatedResponse.data.data;
+    }
+
+    // Filter out current anime
+    related = related.filter(item =>
       item.attributes.canonicalTitle.toLowerCase() !== canonical
     );
+    // END IMPROVED RELATED LOGIC
 
     // Check user library status
     let userAnimeStatus = null;
