@@ -1,8 +1,10 @@
 # ReccoFlix
 
-ReccoFlix is a robust, full-stack anime discovery and tracking web application. It serves as a centralized platform for anime enthusiasts to explore new titles, search a comprehensive database, and manage their personal viewing library.
+🚀 **[Try Live Demo](https://reccoflix.app)**
 
-The application allows users to track their anime journey by categorizing titles into statuses such as "Watched", "Watching", "Planned", "On Hold", and "Dropped". With persistent authentication and a personalized profile system, ReccoFlix provides a seamless and customized user experience.
+ReccoFlix is a robust, full-stack anime discovery and tracking web application. It serves as a centralized platform for anime enthusiasts to explore new titles, search a comprehensive database, and track their viewing journey.
+
+The application allows users to track their anime journey by categorizing titles into statuses such as "Watched", "Watching", "Planned", "On Hold", and "Dropped". With persistent authentication and a personalized library, users have complete control over their anime watchlist.
 
 ## Features
 
