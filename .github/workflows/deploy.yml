@@ -21,25 +21,24 @@ jobs:
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            # 1. Load the full environment (helps find npm, npx, and pm2)
-            export NVM_DIR="$HOME/.nvm"
-            [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-            source ~/.profile || source ~/.bashrc
-
             cd /home/${{ secrets.EC2_USERNAME }}/ReccoFlix
             
-            # 2. Force a clean state (discard any local server changes)
+            # 1. Pull the latest code
             git fetch origin main
             git reset --hard origin/main
             
-            # 3. Recreate the .env file
+            # 2. Recreate the .env file
             echo "${{ secrets.ENV_FILE }}" > .env
             
-            # 4. Install & Generate
-            npm install
-            npx prisma generate
+            # 3. Build and Start the container
+            # --build: rebuilds the image with new code
+            # -d: runs in background
+            # --remove-orphans: cleans up old related containers
+            docker-compose up -d --build --remove-orphans
             
-            # 5. Restart
-            pm2 restart index.js || pm2 start index.js --name "reccoflix"
+            # 4. CRITICAL: Cleanup old "junk" images to save EBS space
+            # This removes images that are no longer being used by the container
+            docker image prune -f
+
 
 
