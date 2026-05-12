@@ -21,20 +21,18 @@ router.get("/logout", authController.logout);
 router.post("/forgot-password", forgotPasswordLimiter, authController.postForgotPassword);
 router.post("/reset-password/:token", authController.postResetPassword);
 
-// Google OAuth (this might need to redirect to frontend URL)
+// Google OAuth
 router.get("/google", passport.authenticate("google", { scope: ["profile", "email"], prompt: "select_account" }));
 router.get("/google/callback", 
   (req, res, next) => {
-    // Determine where to redirect back to
-    const host = req.get('host');
+    // Determine where to redirect back to - use the same origin since frontend is now on same port
     const protocol = req.protocol;
-    // For local dev, we usually want to go back to port 8080 (the Vite frontend)
-    // We can infer the protocol and host from the request
-    const frontendUrl = host.includes('localhost') ? 'http://localhost:8080' : `${protocol}://${host.split(':')[0]}:8080`;
+    const host = req.get('host');
+    const baseUrl = `${protocol}://${host}`;
     
     passport.authenticate("google", { 
-        failureRedirect: `${frontendUrl}/login`,
-        successRedirect: `${frontendUrl}/`
+        failureRedirect: `${baseUrl}/login?error=auth_failed`,
+        successRedirect: `${baseUrl}/`
     })(req, res, next);
   }
 );
