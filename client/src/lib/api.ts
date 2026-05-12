@@ -1,11 +1,29 @@
 import axios from "axios";
 import type { Anime } from "./mock-anime";
 
-const getBaseURL = () => {
-  if (typeof window !== "undefined") {
-    return `http://${window.location.hostname}:3000/api`;
+export const getBaseURL = () => {
+  const configuredBaseUrl = import.meta.env.VITE_API_BASE_URL;
+  if (configuredBaseUrl) {
+    return configuredBaseUrl.replace(/\/$/, "");
   }
+
+  if (typeof window !== "undefined") {
+    const { hostname, origin, protocol, port } = window.location;
+    const isLocalDevHost = hostname === "localhost" || hostname === "127.0.0.1";
+
+    if (isLocalDevHost && port !== "3000") {
+      return `${protocol}//${hostname}:3000/api`;
+    }
+
+    return `${origin}/api`;
+  }
+
   return "http://localhost:3000/api";
+};
+
+export const getAuthURL = (path: string) => {
+  const serverOrigin = getBaseURL().replace(/\/api$/, "");
+  return `${serverOrigin}/auth/${path.replace(/^\/+/, "")}`;
 };
 
 export const api = axios.create({

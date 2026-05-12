@@ -22,6 +22,8 @@ dotenv.config();
 const app = express();
 const port = process.env.PORT || 3000;
 
+app.set("trust proxy", 1);
+
 // Middleware
 app.use(cors({
   origin: process.env.CLIENT_URL || "http://localhost:8080",
@@ -47,6 +49,7 @@ app.use(passport.session());
 configurePassport(passport);
 
 // API Routes
+app.use("/auth", authRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/anime", animeRoutes);
