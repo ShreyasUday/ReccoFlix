@@ -55,7 +55,42 @@ app.use("/api/info", infoRoutes);
 // SERVE FRONTEND ASSETS
 app.use(express.static(path.join(__dirname, "client/dist/client")));
 
-// CATCH-ALL: This is the safest way to handle SSR without triggering PathError
+// Helper: Convert Express req/res to Web Standard Request/Response
+async function expressToFetch(req, res) {
+  // Read the body
+  let body = null;
+  if (req.method !== 'GET' && req.method !== 'HEAD') {
+    body = JSON.stringify(req.body || {});
+  }
+
+  // Build the URL
+  const protocol = req.protocol || 'http';
+  const host = req.get('host') || 'localhost';
+  const url = new URL(req.originalUrl || req.url, `${protocol}://${host}`);
+
+  // Create a Web Standard Request
+  const fetchRequest = new Request(url, {
+    method: req.method,
+    headers: req.headers,
+    body: body,
+  });
+
+  return fetchRequest;
+}
+
+// Helper: Convert Web Standard Response to Express response
+async function fetchToExpress(response, res) {
+  const body = await response.text();
+  
+  res.status(response.status);
+  response.headers.forEach((value, name) => {
+    res.set(name, value);
+  });
+  
+  res.send(body);
+}
+
+// CATCH-ALL: Handle TanStack Start SSR with Web Standard API
 app.use(async (req, res, next) => {
   // If it's an API route that didn't match above, send 404
   if (req.path.startsWith("/api")) {
@@ -68,10 +103,17 @@ app.use(async (req, res, next) => {
       const module = await import(`file://${handlerPath}`);
       const handler = module.default;
       
-      if (typeof handler === 'function') {
-        return handler(req, res, next);
+      if (handler && typeof handler.fetch === 'function') {
+        // Convert Express request to Web Standard Request
+        const fetchRequest = await expressToFetch(req, res);
+        
+        // Call the TanStack handler with Web Standard API
+        const fetchResponse = await handler.fetch(fetchRequest, {}, {});
+        
+        // Convert Web Standard Response back to Express
+        return await fetchToExpress(fetchResponse, res);
       } else {
-        console.warn("Handler is not a function, type:", typeof handler);
+        console.warn("Handler.fetch is not a function", handler);
       }
     } else {
       console.warn("Handler path does not exist:", handlerPath);
