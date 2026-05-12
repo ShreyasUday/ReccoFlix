@@ -4,6 +4,10 @@ import { Strategy as LocalStrategy } from "passport-local";
 import bcrypt from "bcrypt";
 import { prisma } from "./database.js";
 
+export function isGoogleAuthConfigured() {
+    return Boolean(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET && process.env.GOOGLE_CALLBACK_URL);
+}
+
 export function configurePassport() {
     passport.use(
         "local",
@@ -30,7 +34,8 @@ export function configurePassport() {
         })
     );
 
-    passport.use(
+    if (isGoogleAuthConfigured()) {
+        passport.use(
         "google",
         new GoogleStrategy(
             {
@@ -74,7 +79,10 @@ export function configurePassport() {
                 }
             }
         )
-    );
+        );
+    } else {
+        console.warn("Google OAuth disabled: missing GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, or GOOGLE_CALLBACK_URL");
+    }
 
     passport.serializeUser((user, cb) => {
         cb(null, user.id);

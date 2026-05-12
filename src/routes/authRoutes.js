@@ -2,6 +2,7 @@ import express from "express";
 import passport from "passport";
 import rateLimit from "express-rate-limit";
 import * as authController from "../controllers/authController.js";
+import { isGoogleAuthConfigured } from "../config/passport.js";
 
 const router = express.Router();
 
@@ -22,9 +23,19 @@ router.post("/forgot-password", forgotPasswordLimiter, authController.postForgot
 router.post("/reset-password/:token", authController.postResetPassword);
 
 // Google OAuth
-router.get("/google", passport.authenticate("google", { scope: ["profile", "email"], prompt: "select_account" }));
+router.get("/google", (req, res, next) => {
+  if (!isGoogleAuthConfigured()) {
+    return res.status(503).json({ error: "Google authentication is not configured." });
+  }
+
+  return passport.authenticate("google", { scope: ["profile", "email"], prompt: "select_account" })(req, res, next);
+});
 router.get("/google/callback", 
   (req, res, next) => {
+    if (!isGoogleAuthConfigured()) {
+      return res.status(503).json({ error: "Google authentication is not configured." });
+    }
+
     // Determine where to redirect back to - use the same origin since frontend is now on same port
     const protocol = req.protocol;
     const host = req.get('host');
