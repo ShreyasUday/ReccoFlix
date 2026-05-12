@@ -27,7 +27,7 @@ FROM node:22-slim
 WORKDIR /app
 
 # Install runtime dependencies
-RUN apt-get update && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y openssl curl && rm -rf /var/lib/apt/lists/*
 
 # Copy built files from builder
 COPY --from=builder /app/node_modules ./node_modules
