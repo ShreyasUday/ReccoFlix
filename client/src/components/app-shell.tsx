@@ -224,8 +224,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-gradient-purple shadow-glow-purple transition-smooth hover:scale-105 sm:h-9 sm:w-9"
                   title={`Logged in as ${user.name || user.email}`}
                 >
-                  {user.avatar_url ? (
-                    <img src={user.avatar_url} alt="" className="h-full w-full object-cover" />
+                  {user.avatar_url || localStorage.getItem(`rf_avatar_${user.id}`) ? (
+                    <img src={user.avatar_url || localStorage.getItem(`rf_avatar_${user.id}`) || ""} alt="" className="h-full w-full object-cover" />
                   ) : (
                     <User className="h-3.5 w-3.5 text-white sm:h-4 sm:w-4" />
                   )}

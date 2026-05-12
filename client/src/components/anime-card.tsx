@@ -3,6 +3,8 @@ import { Star, Play, Bookmark, Plus, CheckCircle2, Sparkles, Heart } from "lucid
 import type { Anime } from "@/lib/mock-anime";
 import { cn } from "@/lib/utils";
 import { useLibrary } from "@/lib/library-context";
+import { useAuth } from "@/lib/auth-context";
+import { toast } from "sonner";
 
 const statusGlow: Record<string, string> = {
   watching: "shadow-glow-success",
@@ -41,18 +43,33 @@ interface AnimeCardProps {
 
 export function AnimeCard({ anime, size = "md", showProgress, showMatch, layout = "grid" }: AnimeCardProps) {
   const { getAnimeStatus, toggleFavorite, toggleLibrary, isFavorite } = useLibrary();
+  const { isAuthenticated } = useAuth();
   const userStatus = getAnimeStatus(anime.id);
   const favorited = isFavorite(anime.id);
 
   const handleFavorite = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    if (!isAuthenticated) {
+      toast.error("Sign in to build your library", {
+        description: "Login to save your watching progress and get AI picks.",
+        action: { label: "Login", onClick: () => window.location.href = "/login" }
+      });
+      return;
+    }
     await toggleFavorite(anime);
   };
 
   const handleLibrary = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    if (!isAuthenticated) {
+      toast.error("Sign in to build your library", {
+        description: "Login to save your watching progress and get AI picks.",
+        action: { label: "Login", onClick: () => window.location.href = "/login" }
+      });
+      return;
+    }
     await toggleLibrary(anime);
   };
 
@@ -118,7 +135,17 @@ export function AnimeCard({ anime, size = "md", showProgress, showMatch, layout 
         <div className="absolute inset-x-2 bottom-2 flex translate-y-2 items-center gap-1 opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
           <button
             type="button"
-            onClick={(e) => e.preventDefault()}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              if (!isAuthenticated) {
+                toast.error("Sign in to build your library", {
+                  description: "Login to save your watching progress and get AI picks.",
+                  action: { label: "Login", onClick: () => window.location.href = "/login" }
+                });
+                return;
+              }
+            }}
             className="pointer-events-auto flex h-8 w-8 items-center justify-center rounded-full bg-gradient-primary text-primary-foreground shadow-glow"
             aria-label="Play"
           >
