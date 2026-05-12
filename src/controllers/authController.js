@@ -4,7 +4,7 @@ import { Resend } from "resend";
 import { prisma } from "../config/database.js";
 import passport from "passport";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 
 export const getMe = (req, res) => {
   if (req.isAuthenticated()) {
@@ -84,7 +84,7 @@ export const postForgotPassword = async (req, res) => {
       return res.json({ success: true, message: "If an account exists, a reset link has been sent." });
     }
     
-    if (process.env.RESEND_API_KEY) {
+    if (resend) {
       if (user.google_id && !user.password) {
         // Professional Logic: Tell Google users to use Google Login
         await resend.emails.send({
