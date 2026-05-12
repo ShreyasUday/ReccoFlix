@@ -31,11 +31,16 @@ jobs:
             echo "${{ secrets.ENV_FILE }}" > .env
             
             # 3. Build and Start the container
-            # Using 'docker compose' (modern) instead of 'docker-compose'
-            sudo docker compose up -d --build --remove-orphans
+            # This logic checks if 'docker compose' exists, otherwise falls back to 'docker-compose'
+            if sudo docker compose version > /dev/null 2>&1; then
+              sudo docker compose up -d --build --remove-orphans
+            else
+              sudo docker-compose up -d --build --remove-orphans
+            fi
             
             # 4. CRITICAL: Cleanup old "junk" images to save EBS space
             sudo docker image prune -f
+
 
 
 
