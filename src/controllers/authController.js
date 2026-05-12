@@ -7,6 +7,26 @@ import passport from "passport";
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 const resendFromEmail = process.env.RESEND_FROM_EMAIL || "ReccoFlix <onboarding@resend.dev>";
 
+const maskEmail = (email = "") => {
+  const [name, domain] = email.split("@");
+  if (!name || !domain) return "unknown";
+  return `${name.slice(0, 2)}***@${domain}`;
+};
+
+const sendEmail = async (payload) => {
+  if (!resend) {
+    console.warn("Email skipped: RESEND_API_KEY is not configured.");
+    return null;
+  }
+
+  const result = await resend.emails.send(payload);
+  if (result?.error) {
+    throw new Error(`Resend send failed: ${result.error.message || JSON.stringify(result.error)}`);
+  }
+
+  return result?.data || result;
+};
+
 export const getMe = (req, res) => {
   if (req.isAuthenticated()) {
     res.json({ user: req.user });
@@ -78,17 +98,20 @@ export const postLogin = (req, res, next) => {
 export const postForgotPassword = async (req, res) => {
   const { email } = req.body;
   try {
-    const normalizedEmail = email.toLowerCase();
+    const normalizedEmail = email.toLowerCase().trim();
+    console.log(`Password reset requested for ${maskEmail(normalizedEmail)}`);
+
     const user = await prisma.user.findUnique({ where: { email: normalizedEmail } });
     
     if (!user) {
+      console.log(`Password reset skipped: no user found for ${maskEmail(normalizedEmail)}`);
       return res.json({ success: true, message: "If an account exists, a reset link has been sent." });
     }
     
     if (resend) {
       if (user.google_id && !user.password) {
         // Professional Logic: Tell Google users to use Google Login
-        await resend.emails.send({
+        const result = await sendEmail({
           from: resendFromEmail,
           to: user.email,
           subject: 'Sign in to ReccoFlix',
@@ -102,6 +125,7 @@ export const postForgotPassword = async (req, res) => {
             </div>
           `
         });
+        console.log(`Google sign-in reminder sent to ${maskEmail(user.email)} via Resend ${result?.id || ""}`);
       } else {
         // Normal password reset for local users
         const token = crypto.randomBytes(32).toString('hex');
@@ -115,7 +139,7 @@ export const postForgotPassword = async (req, res) => {
         const baseUrl = process.env.CLIENT_URL || 'http://localhost:8080';
         const resetLink = `${baseUrl}/reset-password/${token}`;
 
-        await resend.emails.send({
+        const result = await sendEmail({
           from: resendFromEmail,
           to: user.email,
           subject: 'Reset your ReccoFlix Password',
@@ -128,7 +152,10 @@ export const postForgotPassword = async (req, res) => {
             </div>
           `
         });
+        console.log(`Password reset email sent to ${maskEmail(user.email)} via Resend ${result?.id || ""}`);
       }
+    } else {
+      console.warn(`Password reset email not sent for ${maskEmail(user.email)}: RESEND_API_KEY is not configured.`);
     }
     
     // Always return the same generic message for security (don't reveal if email exists)
