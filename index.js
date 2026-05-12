@@ -37,9 +37,10 @@ app.use(session({
   secret: process.env.SESSION_SECRET || "secret",
   resave: false,
   saveUninitialized: false,
+  proxy: true,
   cookie: {
-    secure: process.env.NODE_ENV === "production",
-    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+    secure: process.env.NODE_ENV === "production" ? "auto" : false,
+    sameSite: "lax",
     maxAge: 24 * 60 * 60 * 1000
   }
 }));
