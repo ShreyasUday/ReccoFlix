@@ -31,14 +31,12 @@ jobs:
             echo "${{ secrets.ENV_FILE }}" > .env
             
             # 3. Build and Start the container
-            # --build: rebuilds the image with new code
-            # -d: runs in background
-            # --remove-orphans: cleans up old related containers
-            docker-compose up -d --build --remove-orphans
+            # Using 'docker compose' (modern) instead of 'docker-compose'
+            sudo docker compose up -d --build --remove-orphans
             
             # 4. CRITICAL: Cleanup old "junk" images to save EBS space
-            # This removes images that are no longer being used by the container
-            docker image prune -f
+            sudo docker image prune -f
+
 
 
 
