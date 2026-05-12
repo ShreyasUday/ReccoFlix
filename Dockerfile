@@ -35,6 +35,7 @@ COPY --from=builder /app/package*.json ./
 COPY --from=builder /app/index.js ./
 COPY --from=builder /app/src ./src
 COPY --from=builder /app/prisma ./prisma
+COPY --from=builder /app/client/node_modules ./client/node_modules
 COPY --from=builder /app/client/dist ./client/dist
 
 # Set production environment
