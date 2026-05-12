@@ -71,20 +71,44 @@ app.use("/api/info", infoRoutes);
 app.use(express.static(path.join(__dirname, "client/dist/client")));
 app.use(express.static(path.join(__dirname, "client/dist")));
 
+// DIAGNOSTIC: Find where the frontend files are hiding
+function scanDir(dir, depth = 0) {
+  if (depth > 3) return;
+  try {
+    const files = fs.readdirSync(dir);
+    console.log(`${"  ".repeat(depth)}📁 ${dir}:`, files);
+    files.forEach(file => {
+      const fullPath = path.join(dir, file);
+      if (fs.statSync(fullPath).isDirectory()) {
+        scanDir(fullPath, depth + 1);
+      }
+    });
+  } catch (e) {
+    console.log(`${"  ".repeat(depth)}❌ Could not read ${dir}`);
+  }
+}
+
 // CATCH-ALL: Send index.html for any non-API route (Handles SPA routing)
 app.get(/^(?!\/api).+/, (req, res) => {
   const possiblePaths = [
     path.join(__dirname, "client/dist/client/index.html"),
-    path.join(__dirname, "client/dist/index.html")
+    path.join(__dirname, "client/dist/index.html"),
+    path.join(__dirname, "client/.output/public/index.html"),
+    path.join(__dirname, "dist/index.html")
   ];
   
   for (const p of possiblePaths) {
     if (fs.existsSync(p)) {
+      console.log(`✅ Found frontend at: ${p}`);
       return res.sendFile(p);
     }
   }
   
-  res.status(404).send("Frontend build not found. Check Docker build logs.");
+  console.log("❌ Frontend NOT FOUND. Scanning directories...");
+  scanDir(path.join(__dirname, "client"));
+  scanDir(path.join(__dirname, "dist"));
+  
+  res.status(404).send("Frontend build not found. Check Docker logs for directory scan.");
 });
 
 
