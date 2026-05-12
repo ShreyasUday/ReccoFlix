@@ -70,7 +70,7 @@ app.use("/api/info", infoRoutes);
 app.use(express.static(path.join(__dirname, "client/dist")));
 
 // CATCH-ALL: Send index.html for any non-API route (Handles SPA routing)
-app.get("*", (req, res) => {
+app.get("/*", (req, res) => {
   if (!req.path.startsWith("/api")) {
     res.sendFile(path.join(__dirname, "client/dist", "index.html"));
   }
