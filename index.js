@@ -11,6 +11,12 @@ import userRoutes from "./src/routes/userRoutes.js";
 import animeRoutes from "./src/routes/animeRoutes.js";
 import infoRoutes from "./src/routes/infoRoutes.js";
 import connectPgSimple from "connect-pg-simple";
+import path from "path";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 
 dotenv.config();
 configurePassport();
@@ -59,6 +65,17 @@ app.use("/api/auth", authRoutes);
 app.use("/api/user", userRoutes);
 app.use("/api/anime", animeRoutes);
 app.use("/api/info", infoRoutes);
+
+// Serve static files from the client/dist folder
+app.use(express.static(path.join(__dirname, "client/dist")));
+
+// CATCH-ALL: Send index.html for any non-API route (Handles SPA routing)
+app.get("*", (req, res) => {
+  if (!req.path.startsWith("/api")) {
+    res.sendFile(path.join(__dirname, "client/dist", "index.html"));
+  }
+});
+
 
 app.listen(port, () => {
   console.log(`🚀 Server running on port ${port}`);
