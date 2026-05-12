@@ -65,11 +65,20 @@ app.use(async (req, res, next) => {
   try {
     const handlerPath = path.join(__dirname, "client/dist/server/index.js");
     if (fs.existsSync(handlerPath)) {
-      const { default: handler } = await import(`file://${handlerPath}`);
-      return handler(req, res, next);
+      const module = await import(`file://${handlerPath}`);
+      const handler = module.default;
+      
+      if (typeof handler === 'function') {
+        return handler(req, res, next);
+      } else {
+        console.warn("Handler is not a function, type:", typeof handler);
+      }
+    } else {
+      console.warn("Handler path does not exist:", handlerPath);
     }
   } catch (err) {
-    console.error("TanStack Handler Error:", err);
+    console.error("TanStack Handler Error:", err.message);
+    console.error("Stack:", err.stack);
   }
 
   // Final fallback
