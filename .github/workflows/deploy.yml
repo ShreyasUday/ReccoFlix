@@ -3,16 +3,45 @@ name: Deploy ReccoFlix to EC2
 on:
   push:
     branches:
-      - main  # This triggers the deployment only when you push to the main branch
+      - main
 
 jobs:
-  deploy:
+  build-and-push:
     runs-on: ubuntu-latest
-
+    permissions:
+      contents: read
+      packages: write
+    
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
 
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and Push Docker Image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ghcr.io/shreyasuday/reccoflix:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  deploy:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
 
       - name: Deploy to EC2 via SSH
         uses: appleboy/ssh-action@v0.1.10
@@ -23,25 +52,25 @@ jobs:
           script: |
             cd /home/${{ secrets.EC2_USERNAME }}/ReccoFlix
             
-            # 1. Pull the latest code
+            # 1. Pull the latest code (for docker-compose.yml and .env)
             git fetch origin main
             git reset --hard origin/main
             
             # 2. Recreate the .env file
             echo "${{ secrets.ENV_FILE }}" > .env
             
-            # 3. Build and Start the container
+            # 3. Log in to GHCR on the EC2 (so it can pull the private image)
+            echo "${{ secrets.GITHUB_TOKEN }}" | sudo docker login ghcr.io -u ${{ github.actor }} --password-stdin
+            
+            # 4. Pull and Restart
             # This logic checks if 'docker compose' exists, otherwise falls back to 'docker-compose'
             if sudo docker compose version > /dev/null 2>&1; then
-              sudo docker compose up -d --build --remove-orphans
+              sudo docker compose pull
+              sudo docker compose up -d --remove-orphans
             else
-              sudo docker-compose up -d --build --remove-orphans
+              sudo docker-compose pull
+              sudo docker-compose up -d --remove-orphans
             fi
             
-            # 4. CRITICAL: Cleanup old "junk" images to save EBS space
+            # 5. Cleanup
             sudo docker image prune -f
-
-
-
-
-

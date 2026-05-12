@@ -1,6 +1,6 @@
 services:
   reccoflix:
-    build: .
+    image: ghcr.io/shreyasuday/reccoflix:latest
     container_name: reccoflix_app
     restart: always
     ports:
