@@ -55,19 +55,16 @@ app.use("/api/info", infoRoutes);
 // SERVE FRONTEND ASSETS
 app.use(express.static(path.join(__dirname, "client/dist/client")));
 
-// CATCH-ALL: Handle TanStack Start SSR
-// We use a safe try/catch because the file might not exist during dev
-app.all("*", async (req, res, next) => {
+// CATCH-ALL: This is the safest way to handle SSR without triggering PathError
+app.use(async (req, res, next) => {
   // If it's an API route that didn't match above, send 404
   if (req.path.startsWith("/api")) {
     return res.status(404).json({ error: "API Route Not Found" });
   }
 
   try {
-    // We try to load the built TanStack handler dynamically
     const handlerPath = path.join(__dirname, "client/dist/server/index.js");
     if (fs.existsSync(handlerPath)) {
-      // This dynamically imports the TanStack server and passes the request to it
       const { default: handler } = await import(`file://${handlerPath}`);
       return handler(req, res, next);
     }
@@ -75,8 +72,8 @@ app.all("*", async (req, res, next) => {
     console.error("TanStack Handler Error:", err);
   }
 
-  // Fallback if everything fails
-  res.status(200).send("ReccoFlix API is Live. Frontend is still building...");
+  // Final fallback
+  res.status(200).send("ReccoFlix is initializing...");
 });
 
 app.listen(port, () => {
