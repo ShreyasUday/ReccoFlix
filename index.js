@@ -1,4 +1,5 @@
 import express from "express";
+import fs from "fs";
 import bodyParser from "body-parser";
 import cors from "cors";
 import passport from "passport";
@@ -66,12 +67,24 @@ app.use("/api/user", userRoutes);
 app.use("/api/anime", animeRoutes);
 app.use("/api/info", infoRoutes);
 
-// Serve static files from the client/dist folder
+// Serve static files (Search multiple possible build locations)
+app.use(express.static(path.join(__dirname, "client/dist/client")));
 app.use(express.static(path.join(__dirname, "client/dist")));
 
 // CATCH-ALL: Send index.html for any non-API route (Handles SPA routing)
 app.get(/^(?!\/api).+/, (req, res) => {
-  res.sendFile(path.join(__dirname, "client/dist", "index.html"));
+  const possiblePaths = [
+    path.join(__dirname, "client/dist/client/index.html"),
+    path.join(__dirname, "client/dist/index.html")
+  ];
+  
+  for (const p of possiblePaths) {
+    if (fs.existsSync(p)) {
+      return res.sendFile(p);
+    }
+  }
+  
+  res.status(404).send("Frontend build not found. Check Docker build logs.");
 });
 
 

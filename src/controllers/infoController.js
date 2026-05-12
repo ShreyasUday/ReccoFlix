@@ -1,11 +1,11 @@
 export const getAbout = (req, res) => {
-  res.render("about");
+  res.json({ status: "ok", message: "ReccoFlix API is running" });
 };
 
 export const getPrivacy = (req, res) => {
-  res.render("privacy");
+  res.json({ message: "Privacy Policy data" });
 };
 
 export const getTerms = (req, res) => {
-  res.render("terms");
+  res.json({ message: "Terms of Service data" });
 };
