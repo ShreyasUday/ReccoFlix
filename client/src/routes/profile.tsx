@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState, useEffect, useRef } from "react";
-import { fetchProfile } from "@/lib/api";
+import { fetchProfile, updateProfile } from "@/lib/api";
 import {
   Settings, Library, LogOut, Mail, User as UserIcon,
   Clock, CheckCircle2, Heart, Bookmark, Loader2, Film, ExternalLink,
@@ -33,7 +33,7 @@ function ProfilePage() {
   const [libraryItems, setLibraryItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [loggingOut, setLoggingOut] = useState(false);
-  const { logout } = useAuth();
+  const { logout, refreshUser } = useAuth();
   const navigate = useNavigate();
 
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
@@ -51,7 +51,7 @@ function ProfilePage() {
         setLoading(false);
         const sa = localStorage.getItem(`rf_avatar_${data.user.id}`);
         const sc = localStorage.getItem(`rf_cover_${data.user.id}`);
-        if (sa) setAvatarUrl(sa);
+        setAvatarUrl(data.user.avatar_url || sa || null);
         if (sc) {
           try { setCoverData(JSON.parse(sc)); } catch { /* ignore */ }
         }
@@ -72,7 +72,15 @@ function ProfilePage() {
     reader.onload = () => {
       const d = reader.result as string;
       setAvatarUrl(d);
-      if (user) localStorage.setItem(`rf_avatar_${user.id}`, d);
+      if (user) {
+        localStorage.setItem(`rf_avatar_${user.id}`, d);
+        updateProfile({ avatar_url: d })
+          .then((data) => {
+            setUser(data.user);
+            return refreshUser();
+          })
+          .catch((err) => console.error("Failed to save avatar:", err));
+      }
       setShowAvatarModal(false);
     };
     reader.readAsDataURL(file);

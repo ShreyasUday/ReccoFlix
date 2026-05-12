@@ -38,8 +38,8 @@ function ResetPasswordPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center px-6 py-12">
-      <div className="w-full max-w-md space-y-8 animate-fade-up">
+    <div className="flex min-h-[100dvh] items-center justify-center px-4 py-10 sm:px-6">
+      <div className="w-full max-w-md space-y-7 animate-fade-up">
         <div className="text-center">
           <Link to="/" className="inline-flex items-center gap-2.5">
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-primary shadow-glow">
@@ -78,18 +78,18 @@ function ResetPasswordPage() {
                 <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-muted-foreground">
                   New Password
                 </label>
-                <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-background/40 px-3 py-2.5 transition-smooth focus-within:border-primary/60 focus-within:shadow-glow">
-                  <Lock className="h-4 w-4 text-muted-foreground" />
+                <div className="relative flex items-center rounded-xl border border-white/10 bg-background/40 px-3 py-2.5 pr-11 transition-smooth focus-within:border-primary/60 focus-within:shadow-glow">
+                  <Lock className="mr-2 h-4 w-4 shrink-0 text-muted-foreground" />
                   <input
                     type={show ? "text" : "password"}
                     placeholder="••••••••"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
-                    className="flex-1 bg-transparent text-sm focus:outline-none"
+                    className="min-w-0 flex-1 bg-transparent text-sm focus:outline-none"
                     autoFocus
                   />
-                  <button type="button" onClick={() => setShow((s) => !s)} className="text-muted-foreground hover:text-foreground">
+                  <button type="button" onClick={() => setShow((s) => !s)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground" aria-label="Toggle password visibility">
                     {show ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
                 </div>
@@ -100,14 +100,14 @@ function ResetPasswordPage() {
                   Confirm Password
                 </label>
                 <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-background/40 px-3 py-2.5 transition-smooth focus-within:border-primary/60 focus-within:shadow-glow">
-                  <Lock className="h-4 w-4 text-muted-foreground" />
+                  <Lock className="h-4 w-4 shrink-0 text-muted-foreground" />
                   <input
                     type={show ? "text" : "password"}
                     placeholder="••••••••"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     required
-                    className="flex-1 bg-transparent text-sm focus:outline-none"
+                    className="min-w-0 flex-1 bg-transparent text-sm focus:outline-none"
                   />
                 </div>
               </div>

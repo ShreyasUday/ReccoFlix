@@ -4,7 +4,8 @@ import {
   generateShareLine, 
   generateAISynopsis,
   getMoodRecommendations,
-  generateEpisodeAISynopsis
+  generateEpisodeAISynopsis,
+  getTrendingRecommendations
 } from "../services/aiService.js";
 import { prisma } from "../config/database.js";
 import axios from "axios";
@@ -13,13 +14,55 @@ function extractFranchiseKeyword(animeData) {
   return animeData.attributes.canonicalTitle.split(/[(:]/)[0].trim();
 }
 
+function dedupeAnime(items) {
+  const seen = new Set();
+  return items.filter((item) => {
+    const title = item?.attributes?.canonicalTitle?.toLowerCase().replace(/[^a-z0-9]/g, "");
+    if (!title || seen.has(title)) return false;
+    seen.add(title);
+    return true;
+  });
+}
+
 export const getCategory = async (req, res) => {
   try {
-    const response = await axios.get(
-      "https://kitsu.io/api/edge/anime?filter[status]=current&sort=popularityRank&page[limit]=10",
-      { timeout: 8000 }
+    const axiosConfig = { timeout: 8000 };
+
+    const [kitsuCurrent, kitsuPopular, jikanSeason] = await Promise.allSettled([
+      axios.get("https://kitsu.io/api/edge/anime?filter[status]=current&sort=-userCount&page[limit]=20", axiosConfig),
+      axios.get("https://kitsu.io/api/edge/anime?sort=-userCount&page[limit]=20", axiosConfig),
+      axios.get("https://api.jikan.moe/v4/seasons/now?limit=20&sfw=true", axiosConfig)
+    ]);
+
+    const currentItems = kitsuCurrent.status === "fulfilled" ? kitsuCurrent.value.data.data : [];
+    const popularItems = kitsuPopular.status === "fulfilled" ? kitsuPopular.value.data.data : [];
+    const jikanSignals = jikanSeason.status === "fulfilled"
+      ? jikanSeason.value.data.data.map((item) => item.title_english || item.title).filter(Boolean)
+      : [];
+
+    const signals = dedupeAnime([...currentItems, ...popularItems])
+      .slice(0, 24)
+      .map((item) => item.attributes.canonicalTitle)
+      .concat(jikanSignals.slice(0, 12));
+
+    const aiPicks = await getTrendingRecommendations(signals);
+    const aiItems = await Promise.all(
+      aiPicks.map(async (pick) => {
+        const details = await fetchKitsuDetailsByTitle(pick.title);
+        if (details) {
+          details.attributes.aiReason = pick.reason;
+          return details;
+        }
+        return null;
+      })
     );
-    const trending = response.data.data.sort(() => Math.random() - 0.5);
+
+    const trending = dedupeAnime([
+      ...aiItems.filter(Boolean),
+      ...currentItems,
+      ...popularItems
+    ]).slice(0, 16);
+
     res.json({ trending });
   } catch (err) {
     console.log("Category page error:", err.message);

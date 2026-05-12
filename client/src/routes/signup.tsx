@@ -80,7 +80,7 @@ function SignupPage() {
         </div>
       </div>
 
-      <div className="relative flex min-h-[100dvh] items-center justify-center px-6 py-12 sm:px-12 lg:min-h-0 lg:py-10">
+      <div className="relative flex min-h-[100dvh] items-center justify-center px-4 py-10 sm:px-12 lg:min-h-0 lg:py-10">
         <div className="w-full max-w-md space-y-6">
           <div className="lg:hidden">
             <Link to="/" className="flex items-center gap-2.5">
@@ -103,7 +103,7 @@ function SignupPage() {
               <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-muted-foreground">Username</label>
               <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-background/40 px-3 py-2.5 transition-smooth focus-within:border-primary/60 focus-within:shadow-glow">
                 <User className="h-4 w-4 text-muted-foreground" />
-                <input type="text" placeholder="otakuhero" value={name} onChange={e => setName(e.target.value)} required className="flex-1 bg-transparent text-sm focus:outline-none" />
+                <input type="text" placeholder="otakuhero" value={name} onChange={e => setName(e.target.value)} required className="min-w-0 flex-1 bg-transparent text-sm focus:outline-none" />
               </div>
             </div>
 
@@ -111,7 +111,7 @@ function SignupPage() {
               <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-muted-foreground">Email</label>
               <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-background/40 px-3 py-2.5 transition-smooth focus-within:border-primary/60 focus-within:shadow-glow">
                 <Mail className="h-4 w-4 text-muted-foreground" />
-                <input type="email" placeholder="you@example.com" value={email} onChange={e => setEmail(e.target.value)} required className="flex-1 bg-transparent text-sm focus:outline-none" />
+                <input type="email" placeholder="you@example.com" value={email} onChange={e => setEmail(e.target.value)} required className="min-w-0 flex-1 bg-transparent text-sm focus:outline-none" />
               </div>
             </div>
 
@@ -119,7 +119,7 @@ function SignupPage() {
               <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-muted-foreground">Password</label>
               <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-background/40 px-3 py-2.5 transition-smooth focus-within:border-primary/60 focus-within:shadow-glow">
                 <Lock className="h-4 w-4 text-muted-foreground" />
-                <input type="password" placeholder="••••••••" value={password} onChange={e => setPassword(e.target.value)} required className="flex-1 bg-transparent text-sm focus:outline-none" />
+                <input type="password" placeholder="••••••••" value={password} onChange={e => setPassword(e.target.value)} required className="min-w-0 flex-1 bg-transparent text-sm focus:outline-none" />
               </div>
             </div>
 

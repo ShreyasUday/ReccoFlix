@@ -161,7 +161,7 @@ export const fetchShareLine = async (title: string, synopsis: string) => {
   return res.data.line;
 };
 
-export const updateProfile = async (data: { name?: string, email?: string, currentPassword?: string, newPassword?: string }) => {
+export const updateProfile = async (data: { name?: string, email?: string, currentPassword?: string, newPassword?: string, avatar_url?: string | null, cover_url?: string | null }) => {
   const res = await api.post("/user/update-profile", data);
   return res.data;
 };

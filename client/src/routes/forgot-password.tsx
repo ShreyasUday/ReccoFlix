@@ -30,7 +30,7 @@ function ForgotPasswordPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center px-6 py-12">
+    <div className="flex min-h-[100dvh] items-center justify-center px-4 py-10 sm:px-6">
       <div className="w-full max-w-md space-y-8 animate-fade-up">
         <div className="text-center">
           <Link to="/" className="inline-flex items-center gap-2.5">
@@ -73,7 +73,7 @@ function ForgotPasswordPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
-                  className="flex-1 bg-transparent text-sm focus:outline-none"
+                  className="min-w-0 flex-1 bg-transparent text-sm focus:outline-none"
                   autoFocus
                 />
               </div>
