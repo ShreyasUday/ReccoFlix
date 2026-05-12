@@ -1,0 +1,39 @@
+name: Deploy ReccoFlix to EC2
+
+on:
+  push:
+    branches:
+      - main  # This triggers the deployment only when you push to the main branch
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Deploy to EC2 via SSH
+        uses: appleboy/ssh-action@v0.1.10
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd /home/${{ secrets.EC2_USERNAME }}/ReccoFlix  # Make sure this path is correct for your EC2
+            
+            # 1. Get the latest code
+            git pull origin main
+            
+            # 2. Recreate the .env file from GitHub Secrets
+            echo "${{ secrets.ENV_FILE }}" > .env
+            
+            # 3. Install backend dependencies
+            npm install
+            
+            # 4. Sync Prisma (Generate the client)
+            npx prisma generate
+            
+            # 5. Restart the server using PM2
+            pm2 restart index.js || pm2 start index.js --name "reccoflix"
+

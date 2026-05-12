@@ -1,169 +1,296 @@
-# ReccoFlix
+<p align="center">
+  <img src="https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=nodedotjs&logoColor=white" />
+  <img src="https://img.shields.io/badge/Express-000000?style=for-the-badge&logo=express&logoColor=white" />
+  <img src="https://img.shields.io/badge/React-61DAFB?style=for-the-badge&logo=react&logoColor=black" />
+  <img src="https://img.shields.io/badge/TanStack-FF4154?style=for-the-badge&logo=reactquery&logoColor=white" />
+  <img src="https://img.shields.io/badge/Prisma-2D3748?style=for-the-badge&logo=prisma&logoColor=white" />
+  <img src="https://img.shields.io/badge/Supabase-3FCF8E?style=for-the-badge&logo=supabase&logoColor=white" />
+  <img src="https://img.shields.io/badge/AWS_EC2-FF9900?style=for-the-badge&logo=amazonec2&logoColor=white" />
+  <img src="https://img.shields.io/badge/Nginx-009639?style=for-the-badge&logo=nginx&logoColor=white" />
+</p>
 
-🚀 **[Try Live Demo](https://reccoflix.app)**
+# 🎬 ReccoFlix — AI-Powered Anime Discovery Platform
 
-ReccoFlix is a robust, full-stack anime discovery and tracking web application. It serves as a centralized platform for anime enthusiasts to explore new titles, search a comprehensive database, and track their viewing journey.
+ReccoFlix is a full-stack anime discovery and tracking platform that uses **AI-driven recommendations** to help users find their next favorite anime. It combines real-time data from the **Kitsu** and **Jikan (MAL)** APIs with a custom **Groq LLM-powered recommendation engine** to deliver hyper-personalized suggestions based on a user's watch history, favorites, and mood.
 
-The application allows users to track their anime journey by categorizing titles into statuses such as "Watched", "Watching", "Planned", "On Hold", and "Dropped". With persistent authentication and a personalized library, users have complete control over their anime watchlist.
+> 🌐 **Live at:** [reccoflix.app](https://reccoflix.app)
 
-## Features
+---
 
-- **Anime Discovery**: Browse trending anime and filter titles by various categories.
-- **Search System**: Search for specific anime titles using the Kitsu API integration.
-- **Detailed Information**: View comprehensive details including synopsis, ratings, episode counts, and related franchises.
-- **User Authentication**: Secure signup and login via local credentials (email/password) or Google OAuth.
-- **Personal Library**: Add anime to a personalized library and track viewing status (Planned, Watching, Completed, On Hold, Dropped).
-- **Library Management**: Update statuses or remove anime from the library directly from the interface.
-- **Responsive Design**: A fully responsive user interface ensuring compatibility across desktop, tablet, and mobile devices.
-- **Profile Management**: View user details and manage library content from a dedicated profile page.
+## ✨ Key Features
 
-## Tech Stack
+### 🤖 AI Recommendation Engine
+- **Personalized Recommendations**: Powered by Groq's `llama-3.3-70b-versatile` model, the engine analyzes the user's library to generate 15 unique, non-duplicate suggestions with reasoning.
+- **Mood-Based Discovery**: Users describe a vibe (e.g., "melancholic rain", "hype battle") and the AI curates a list of anime matching that emotional tone.
+- **AI Synopsis Generation**: When an anime's official synopsis is too short or missing, the AI writes a professional, atmospheric 2-paragraph synopsis.
+- **Episode Narrative Synthesis**: Each episode page can be enriched with an AI-generated plot analysis, anchored by factual metadata to prevent hallucination.
+- **Smart Caching**: AI results are cached per-user in the database and only refreshed when the user's library changes, minimizing redundant API calls.
 
-### Frontend
-- **EJS**: Server-side templating for dynamic HTML rendering.
-- **HTML5**: Semantic markup structure.
-- **CSS3**: Custom styling with responsive design principles.
-- **Vanilla JavaScript**: Client-side interactivity and DOM manipulation.
+### 📚 Anime Library & Tracking
+- Full library management with statuses: **Watching**, **Planned**, **Completed**, **Dropped**, **On Hold**.
+- **Favorites System**: Users can heart anime to prioritize them.
+- **Recent in Library**: Powered by automatic `updated_at` timestamps, the most recently interacted-with anime always surfaces first.
 
-### Backend
-- **Node.js**: JavaScript runtime environment.
-- **Express.js**: Web framework for routing and middleware.
-- **Passport.js**: Authentication middleware supporting Local Strategy and Google OAuth 2.0.
-- **Express-session**: Session management for persistent user login states.
+### 🔐 Authentication
+- **Dual Auth Strategy**: Supports both local email/password registration and **Google OAuth 2.0** via Passport.js.
+- **Password Reset Flow**: Secure token-based password reset via **Resend** email service with rate limiting.
+- **Profile Management**: Users can update their name, email, password, profile picture, and cover photo.
 
-### Database
-- **PostgreSQL**: Relational database for storing user data and library entries.
+### 🔍 Discovery & Browsing
+- **Search**: Full-text search powered by the Kitsu API.
+- **Genre Browsing**: Filter by 15+ genres with randomized sort orders for content diversity.
+- **Ongoing/Trending**: Real-time feed of currently airing and popular anime.
+- **Franchise Mapping**: Automatic detection of related seasons and spin-offs via Kitsu media relationships.
 
-### External API
-- **Kitsu Anime API**: Source for fetching real-time anime data and metadata.
+### 📊 Deep Metadata Enrichment
+- **Dual-Source Architecture**: Primary data from **Kitsu API**, with automatic fallback to **Jikan (MyAnimeList) API** for missing studios, episode counts, runtimes, and episode thumbnails.
+- **Character Database**: Fetches cast and character data for each anime.
+- **Episode-Level Detail**: Ratings, filler/recap flags, and air dates sourced from Jikan.
 
-### Tools & Utilities
-- **Axios**: HTTP client for making API requests.
-- **bcrypt**: Library for hashing and securing user passwords.
-- **connect-pg-simple**: PostgreSQL session store for Express.
-- **dotenv**: Environment variable management.
+---
 
-## Folder Structure
+## 🏗️ Architecture
 
 ```
-ReccoFlix
-├── node_modules
-├── public
-│   ├── fonts
-│   │   ├── animeace2bb_ot
-│   │   └── animeace2bb_tt
-│   │       ├── animeace2_bld.ttf
-│   │       ├── animeace2_ital.ttf
-│   │       └── animeace2_reg.ttf
-│   ├── js
-│   │   └── main.js
-│   └── styles
-│       └── main.css
-├── views
-│   ├── partials
-│   │   ├── footer.ejs
-│   │   └── header.ejs
-│   ├── about.ejs
-│   ├── browse.ejs
-│   ├── category.ejs
-│   ├── description.ejs
-│   ├── home.ejs
-│   ├── login.ejs
-│   ├── privacy.ejs
-│   ├── profile.ejs
-│   ├── register.ejs
-│   ├── search.ejs
-│   └── terms.ejs
-├── .env
-├── .env.example
+┌─────────────────────────────────────────────────────┐
+│                     CLIENT                          │
+│         React + TanStack Start + Tailwind           │
+│              (Port 8080 / Dev)                      │
+└──────────────────────┬──────────────────────────────┘
+                       │ HTTP (API Calls)
+                       ▼
+┌─────────────────────────────────────────────────────┐
+│                  NGINX (Reverse Proxy)              │
+│              SSL via Let's Encrypt                  │
+│            reccoflix.app → 127.0.0.1:3000           │
+└──────────────────────┬──────────────────────────────┘
+                       │
+                       ▼
+┌─────────────────────────────────────────────────────┐
+│               EXPRESS.JS API SERVER                 │
+│           (Port 3000 / Managed by PM2)              │
+│                                                     │
+│  ┌─────────┐  ┌──────────┐  ┌───────────────────┐  │
+│  │  Auth   │  │  Anime   │  │    AI Service     │  │
+│  │ Routes  │  │ Routes   │  │  (Groq LLM)       │  │
+│  └────┬────┘  └────┬─────┘  └────────┬──────────┘  │
+│       │            │                 │              │
+│       ▼            ▼                 ▼              │
+│  ┌─────────────────────────────────────────────┐    │
+│  │         Prisma ORM (Type-Safe Queries)      │    │
+│  └──────────────────┬──────────────────────────┘    │
+└─────────────────────┼───────────────────────────────┘
+                      │
+                      ▼
+┌─────────────────────────────────────────────────────┐
+│              SUPABASE (PostgreSQL)                  │
+│         Connection Pooling via PgBouncer            │
+│    Tables: users, user_library, session             │
+└─────────────────────────────────────────────────────┘
+```
+
+---
+
+## 📁 Project Structure
+
+```
+ReccoFlix/
+├── .github/
+│   └── workflows/
+│       └── deploy.yml            # CI/CD Pipeline (GitHub Actions → EC2)
+│
+├── client/                       # Frontend (React + TanStack Start)
+│   ├── src/
+│   │   ├── components/           # Reusable UI components
+│   │   │   ├── anime-card.tsx
+│   │   │   ├── anime-row.tsx
+│   │   │   ├── app-shell.tsx
+│   │   │   ├── hero-banner.tsx
+│   │   │   └── ui/              # shadcn/ui components
+│   │   ├── routes/              # File-based routing (TanStack Router)
+│   │   │   ├── index.tsx         # Home page
+│   │   │   ├── anime.$id.tsx     # Anime detail page
+│   │   │   ├── browse.tsx        # Genre browsing
+│   │   │   ├── search.tsx        # Search page
+│   │   │   ├── library.tsx       # User library
+│   │   │   ├── mood.tsx          # Mood-based discovery
+│   │   │   ├── profile.tsx       # User profile
+│   │   │   ├── recommendations.tsx
+│   │   │   ├── favorites.tsx
+│   │   │   ├── dossier.$id.$episodeNum.tsx  # Episode detail
+│   │   │   ├── archive.$id.tsx   # Episode archive
+│   │   │   ├── login.tsx
+│   │   │   ├── signup.tsx
+│   │   │   └── ...
+│   │   ├── hooks/               # Custom React hooks
+│   │   ├── lib/                 # Utility functions
+│   │   ├── styles.css           # Global styles (Tailwind)
+│   │   └── router.tsx           # Router configuration
+│   ├── vite.config.ts
+│   ├── tsconfig.json
+│   └── package.json
+│
+├── src/                          # Backend (Express.js API)
+│   ├── config/
+│   │   ├── database.js           # PostgreSQL + Prisma adapter setup
+│   │   └── passport.js           # Authentication strategies (Local + Google)
+│   ├── controllers/
+│   │   ├── animeController.js    # Search, browse, description, episodes, AI
+│   │   ├── authController.js     # Login, register, password reset
+│   │   ├── userController.js     # Profile, library CRUD, favorites
+│   │   └── infoController.js     # Static pages (about, terms, privacy)
+│   ├── routes/
+│   │   ├── animeRoutes.js
+│   │   ├── authRoutes.js
+│   │   ├── userRoutes.js
+│   │   └── infoRoutes.js
+│   ├── services/
+│   │   └── aiService.js          # Groq LLM integration (5 AI functions)
+│   └── middleware/               # Express middleware (extensible)
+│
+├── prisma/
+│   └── schema.prisma             # Database schema (source of truth)
+├── prisma.config.ts              # Prisma 7 configuration
+│
+├── index.js                      # Express server entry point
+├── .env.example                  # Environment variable template
 ├── .gitignore
-├── db.js
-├── index.js
-├── package-lock.json
 ├── package.json
-├── README.md
-├── schema.sql
-└── update_schema.js
+└── README.md
 ```
 
-## Installation & Setup
+---
 
-Follow these steps to set up the project locally.
+## 🛠️ Tech Stack
 
-### 1. Clone the Repository
+| Layer | Technology | Purpose |
+|:------|:-----------|:--------|
+| **Frontend** | React 19, TanStack Start, TanStack Router | SSR-capable SPA with file-based routing |
+| **Styling** | Tailwind CSS 4, shadcn/ui, Radix UI | Utility-first CSS with accessible component primitives |
+| **Backend** | Express 5, Node.js | RESTful API server |
+| **ORM** | Prisma 7 with `@prisma/adapter-pg` | Type-safe database access with connection pooling |
+| **Database** | PostgreSQL (Supabase) | Managed cloud database with PgBouncer |
+| **Auth** | Passport.js (Local + Google OAuth 2.0) | Dual-strategy authentication |
+| **AI Engine** | Groq SDK (`llama-3.3-70b-versatile`) | Recommendations, synopses, mood matching |
+| **Email** | Resend | Transactional emails for password reset |
+| **External APIs** | Kitsu API, Jikan (MAL) API | Anime metadata, episodes, characters |
+| **Hosting** | AWS EC2 (Ubuntu) | Bare-metal Linux server |
+| **Reverse Proxy** | Nginx + Let's Encrypt SSL | HTTPS termination and request routing |
+| **Process Manager** | PM2 | Zero-downtime process management |
+| **CI/CD** | GitHub Actions | Automated deployment on push to `main` |
+
+---
+
+## 🚀 Deployment
+
+ReccoFlix is deployed on a **bare-metal AWS EC2 instance** with a fully automated CI/CD pipeline.
+
+### Infrastructure
+- **Server**: AWS EC2 (Ubuntu) running Node.js directly on the OS for maximum performance and minimal overhead.
+- **Reverse Proxy**: Nginx handles SSL termination (via Let's Encrypt) and proxies all traffic to the Express server on port 3000.
+- **Process Management**: PM2 keeps the application alive across restarts and server reboots.
+- **Database**: Supabase-hosted PostgreSQL with PgBouncer connection pooling for efficient database connections.
+
+### CI/CD Pipeline
+Every push to the `main` branch triggers an automated deployment via **GitHub Actions**:
+
+1. **SSH into EC2** using encrypted repository secrets.
+2. **Pull latest code** from the repository.
+3. **Inject environment variables** securely from GitHub Secrets.
+4. **Install dependencies** and regenerate the Prisma Client.
+5. **Restart the server** via PM2 with automatic fallback to a fresh start.
+
+> The pipeline is designed with a **fail-fast strategy**: if any step fails, the deployment stops immediately, leaving the previous stable version running.
+
+---
+
+## ⚡ Getting Started (Local Development)
+
+### Prerequisites
+- Node.js 18+
+- PostgreSQL (or a Supabase project)
+- Google OAuth credentials
+- Groq API key
+
+### Setup
 
 ```bash
+# 1. Clone the repository
 git clone https://github.com/ShreyasUday/ReccoFlix.git
 cd ReccoFlix
-```
 
-### 2. Install Dependencies
-
-```bash
+# 2. Install backend dependencies
 npm install
-```
 
-### 3. Database Setup
+# 3. Install frontend dependencies
+cd client && npm install && cd ..
 
-Ensure you have PostgreSQL installed and running. Create a new database for the project.
+# 4. Configure environment
+cp .env.example .env
+# Edit .env with your actual credentials
 
-```sql
-CREATE DATABASE reccoflix;
-```
+# 5. Generate Prisma Client
+npx prisma generate
 
-Execute the schema file (if provided) or create the necessary tables (`users`, `user_library`, `session`).
-
-### 4. Configure Environment Variables
-
-Create a `.env` file in the root directory and add the following variables:
-
-```env
-DB_USER=your_postgres_user
-DB_HOST=localhost
-DB_NAME=reccoflix
-DB_PASSWORD=your_postgres_password
-DB_PORT=5432
-SESSION_SECRET=your_secure_session_secret
-GOOGLE_CLIENT_ID=your_google_client_id
-GOOGLE_CLIENT_SECRET=your_google_client_secret
-GOOGLE_CALLBACK_URL=http://localhost:3000/auth/google/callback
-```
-
-### 5. Run the Server
-
-```bash
+# 6. Start the backend server
 npm start
+
+# 7. Start the frontend (in a separate terminal)
+cd client && npm run dev
 ```
 
-The application will be accessible at `http://localhost:3000`.
+The backend runs on `http://localhost:3000` and the frontend on `http://localhost:8080`.
 
-## Environment Variables
+---
 
-The application requires the following environment variables to function correctly:
+## 📄 API Routes
 
-- `DB_USER`: Your PostgreSQL username.
-- `DB_HOST`: Database host address (usually localhost).
-- `DB_NAME`: The name of your PostgreSQL database.
-- `DB_PASSWORD`: Your PostgreSQL password.
-- `DB_PORT`: The port your database is running on (default is 5432).
-- `SESSION_SECRET`: A string used to sign the session ID cookie.
-- `GOOGLE_CLIENT_ID`: OAuth 2.0 Client ID from Google Cloud Console.
-- `GOOGLE_CLIENT_SECRET`: OAuth 2.0 Client Secret from Google Cloud Console.
-- `GOOGLE_CALLBACK_URL`: The callback URL registered in Google Cloud Console.
+### Authentication (`/api/auth`)
+| Method | Endpoint | Description |
+|:-------|:---------|:------------|
+| POST | `/api/auth/register` | Register a new user |
+| POST | `/api/auth/login` | Login with email/password |
+| GET | `/api/auth/logout` | Logout and destroy session |
+| GET | `/api/auth/google` | Initiate Google OAuth flow |
+| POST | `/api/auth/forgot-password` | Request password reset email |
+| POST | `/api/auth/reset-password/:token` | Reset password with token |
 
-## Usage
+### User (`/api/user`)
+| Method | Endpoint | Description |
+|:-------|:---------|:------------|
+| GET | `/api/user/profile` | Get user profile and library |
+| PUT | `/api/user/profile` | Update name, email, password, avatar, cover |
+| POST | `/api/user/library/add` | Add anime to library |
+| POST | `/api/user/library/remove` | Remove anime from library |
+| POST | `/api/user/library/favorite` | Toggle favorite status |
 
-1.  **Register/Login**: Create an account using email/password or sign in with Google.
-2.  **Browse**: Explore anime by category from the home or browse pages.
-3.  **Search**: Use the search bar to find specific titles.
-4.  **Add to Library**: Click on an anime card to view details, then select a status (e.g., "Watching") and click the add button to save it to your library.
-5.  **Manage Library**: Go to your Profile to see your saved anime. You can update their status or remove them.
+### Anime (`/api/anime`)
+| Method | Endpoint | Description |
+|:-------|:---------|:------------|
+| GET | `/api/anime/category` | Get trending anime |
+| GET | `/api/anime/browse` | Browse by genre with pagination |
+| GET | `/api/anime/description` | Get full anime details + AI synopsis |
+| GET | `/api/anime/episodes` | Get episode list with metadata |
+| GET | `/api/anime/characters` | Get character data |
+| GET | `/api/anime/ongoing` | Get currently airing anime |
+| GET | `/api/anime/recommendations` | Get AI or trending recommendations |
+| POST | `/api/anime/share-line` | Generate AI share text |
+| GET | `/api/anime/mood` | Get mood-based recommendations |
+| GET | `/api/anime/episode/:id/:num` | Get episode detail + AI narrative |
 
-## Attribution
+---
 
-- **Kitsu API**: All anime data, images, and metadata are provided by the [Kitsu API](https://kitsu.io/docs/api).
-- **Google OAuth**: Authentication services provided by Google.
+## 🔒 Security
 
-## License
+- **Environment Variables**: All secrets are stored in `.env` (local) and GitHub Secrets (production). Never committed to the repository.
+- **Password Hashing**: bcrypt with 10 salt rounds.
+- **Rate Limiting**: Password reset endpoint is rate-limited (5 requests per 15 minutes).
+- **Session Security**: Server-side sessions stored in PostgreSQL via `connect-pg-simple`.
+- **CORS**: Restricted to the configured `CLIENT_URL` origin.
+- **SSL**: End-to-end HTTPS via Let's Encrypt certificates managed by Nginx.
 
-This project is licensed under the MIT License.
+---
+
+## 📜 License
+
+This project is licensed under the ISC License.
