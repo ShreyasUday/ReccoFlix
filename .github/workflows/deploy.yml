@@ -11,7 +11,8 @@ jobs:
 
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
+
 
       - name: Deploy to EC2 via SSH
         uses: appleboy/ssh-action@v0.1.10
@@ -20,20 +21,25 @@ jobs:
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            cd /home/${{ secrets.EC2_USERNAME }}/ReccoFlix  # Make sure this path is correct for your EC2
+            # 1. Load the full environment (helps find npm, npx, and pm2)
+            export NVM_DIR="$HOME/.nvm"
+            [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+            source ~/.profile || source ~/.bashrc
+
+            cd /home/${{ secrets.EC2_USERNAME }}/ReccoFlix
             
-            # 1. Get the latest code
-            git pull origin main
+            # 2. Force a clean state (discard any local server changes)
+            git fetch origin main
+            git reset --hard origin/main
             
-            # 2. Recreate the .env file from GitHub Secrets
+            # 3. Recreate the .env file
             echo "${{ secrets.ENV_FILE }}" > .env
             
-            # 3. Install backend dependencies
+            # 4. Install & Generate
             npm install
-            
-            # 4. Sync Prisma (Generate the client)
             npx prisma generate
             
-            # 5. Restart the server using PM2
+            # 5. Restart
             pm2 restart index.js || pm2 start index.js --name "reccoflix"
+
 
