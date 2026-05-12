@@ -5,6 +5,7 @@ import { prisma } from "../config/database.js";
 import passport from "passport";
 
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
+const resendFromEmail = process.env.RESEND_FROM_EMAIL || "ReccoFlix <onboarding@resend.dev>";
 
 export const getMe = (req, res) => {
   if (req.isAuthenticated()) {
@@ -88,7 +89,7 @@ export const postForgotPassword = async (req, res) => {
       if (user.google_id && !user.password) {
         // Professional Logic: Tell Google users to use Google Login
         await resend.emails.send({
-          from: 'ReccoFlix <onboarding@resend.dev>',
+          from: resendFromEmail,
           to: user.email,
           subject: 'Sign in to ReccoFlix',
           html: `
@@ -115,7 +116,7 @@ export const postForgotPassword = async (req, res) => {
         const resetLink = `${baseUrl}/reset-password/${token}`;
 
         await resend.emails.send({
-          from: 'ReccoFlix <onboarding@resend.dev>',
+          from: resendFromEmail,
           to: user.email,
           subject: 'Reset your ReccoFlix Password',
           html: `
