@@ -36,7 +36,7 @@ export const getAIRecommendations = async (userAnime = [], favoriteGenres = []) 
 
     const chatCompletion = await groq.chat.completions.create({
       messages: [{ role: "user", content: prompt }],
-      model: "llama-3.3-70b-versatile",
+      model: "llama-3.1-8b-instant",
       temperature: 0.6,
       max_tokens: 600,
       response_format: { type: "json_object" }
@@ -80,7 +80,7 @@ export const generateShareLine = async (title, synopsis) => {
 
     const chatCompletion = await groq.chat.completions.create({
       messages: [{ role: "user", content: prompt }],
-      model: "llama-3.3-70b-versatile",
+      model: "llama-3.1-8b-instant",
       temperature: 0.8,
       max_tokens: 100
     });
@@ -133,7 +133,7 @@ export const generateAISynopsis = async (title, kitsuData = {}) => {
 
     const chatCompletion = await groq.chat.completions.create({
       messages: [{ role: "user", content: prompt }],
-      model: "llama-3.3-70b-versatile",
+      model: "llama-3.1-8b-instant",
       temperature: 0.7,
       max_tokens: 600
     });
@@ -164,17 +164,16 @@ export const generateEpisodeAISynopsis = async (animeTitle, episodeNum, episodeT
       - Existing metadata: "${currentSummary.substring(0, 300)}"
       
       Rules:
-      1. ABSOLUTE ACCURACY: You must ONLY describe events that occur in Episode ${episodeNum}. 
-      2. NO HALLUCINATION: If the episode number is high (like 602), do not guess the arc (e.g., don't assume it's Wano if it's actually Punk Hazard). Use the provided Episode Title as your primary anchor.
-      3. FACTUAL SYNERGY: Combine the "Series Premise" and "Episode Title" to deduce the correct narrative stage.
-      4. TONE: Professional, cinematic, and investigative.
-      5. Length: 4-6 sentences.
-      6. Return ONLY the analysis text.
+      1. NARRATIVE SYNERGY: Combine the "Series Premise" and "Episode Title" to deduce the narrative stage. If specific metadata is missing, use the premise to write an engaging, thematic, and speculative preview of what challenges might await in Episode ${episodeNum}.
+      2. IMMERSION FIRST: NEVER apologize, NEVER state that you lack metadata, and NEVER break character. Always write as if you are uncovering the plot.
+      3. TONE: Professional, cinematic, and investigative.
+      4. Length: 3-5 sentences.
+      5. Return ONLY the analysis text.
     `;
 
     const chatCompletion = await groq.chat.completions.create({
       messages: [{ role: "user", content: prompt }],
-      model: "llama-3.3-70b-versatile",
+      model: "llama-3.1-8b-instant",
       temperature: 0.6,
       max_tokens: 300
     });
@@ -213,7 +212,7 @@ export const getMoodRecommendations = async (mood) => {
 
     const chatCompletion = await groq.chat.completions.create({
       messages: [{ role: "user", content: prompt }],
-      model: "llama-3.3-70b-versatile",
+      model: "llama-3.1-8b-instant",
       temperature: 0.75,
       max_tokens: 500,
       response_format: { type: "json_object" }
@@ -252,7 +251,7 @@ export const getTrendingRecommendations = async (signals = []) => {
       ${signalText || "No external signals available."}
 
       Return a JSON object with:
-      "picks": an array of 12 anime objects, each containing:
+      "picks": an array of 20 anime objects, each containing:
         - "title": exact canonical anime title, English preferred if widely used.
         - "reason": a punchy 5-9 word reason why it is trending now.
 
@@ -266,7 +265,7 @@ export const getTrendingRecommendations = async (signals = []) => {
 
     const chatCompletion = await groq.chat.completions.create({
       messages: [{ role: "user", content: prompt }],
-      model: "llama-3.3-70b-versatile",
+      model: "llama-3.1-8b-instant",
       temperature: 0.65,
       max_tokens: 650,
       response_format: { type: "json_object" }

@@ -264,11 +264,17 @@ function ArchivePage() {
             <div className="space-y-6 sm:space-y-10 animate-fade-in">
               {/* Cinematic Scene Card */}
               <div className="relative aspect-video xl:aspect-[21/9] w-full overflow-hidden rounded-[2rem] sm:rounded-[3rem] border border-white/5 shadow-2xl group">
-                <img 
-                  src={attrs.thumbnail?.original || anime?.banner} 
-                  className="h-full w-full object-cover saturate-[1.2] brightness-[0.4] sm:brightness-[0.6] transition-transform duration-[4s] group-hover:scale-110"
-                  alt="Archive Visual"
-                />
+                {attrs.thumbnail?.original || anime?.banner || anime?.poster ? (
+                  <img 
+                    src={attrs.thumbnail?.original || anime?.banner || anime?.poster} 
+                    className="h-full w-full object-cover saturate-[1.2] brightness-[0.4] sm:brightness-[0.6] transition-transform duration-[4s] group-hover:scale-110"
+                    alt="Archive Visual"
+                  />
+                ) : (
+                  <div className="h-full w-full bg-gradient-to-br from-primary/20 via-background to-primary/5 flex items-center justify-center opacity-40">
+                    <Sparkles className="h-20 w-20 text-primary/20" />
+                  </div>
+                )}
                 <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent" />
                 
                 <div className="absolute bottom-6 left-6 sm:bottom-12 sm:left-12 right-6 space-y-2 sm:space-y-3">
@@ -358,7 +364,9 @@ function ArchivePage() {
                             <span className="text-[8px] sm:text-[9px] font-black uppercase tracking-widest text-muted-foreground/60">Archive Rating</span>
                          </div>
                          <div className="flex items-baseline gap-2">
-                            <span className="text-4xl sm:text-5xl font-black text-white tracking-tighter">8.4</span>
+                            <span className="text-4xl sm:text-5xl font-black text-white tracking-tighter">
+                              {attrs.rating ? attrs.rating : anime?.rating ? (anime.rating / 10).toFixed(1) : "N/A"}
+                            </span>
                             <span className="text-[10px] sm:text-xs font-black text-white/20">/ 10.0</span>
                          </div>
                       </div>

@@ -61,7 +61,7 @@ export const getCategory = async (req, res) => {
       ...aiItems.filter(Boolean),
       ...currentItems,
       ...popularItems
-    ]).slice(0, 16);
+    ]).slice(0, 20);
 
     res.json({ trending });
   } catch (err) {
@@ -124,8 +124,29 @@ export const getBrowse = async (req, res) => {
     const response = await axios.get(kitsuUrl);
     let items = response.data.data;
     
-    // Only shuffle if it's not a strict "Trending" or "Live" request
-    if (selectedCategory !== "trending" && status !== "current") {
+    // Inject AI Curation for Trending Page
+    if (selectedCategory === "trending" && offset === 0) {
+      try {
+        const signals = items.map(item => item.attributes.canonicalTitle).slice(0, 24);
+        const aiPicks = await getTrendingRecommendations(signals);
+        
+        const aiItems = await Promise.all(
+          aiPicks.map(async (pick) => {
+            const details = await fetchKitsuDetailsByTitle(pick.title);
+            if (details) {
+              details.attributes.aiReason = pick.reason;
+              return details;
+            }
+            return null;
+          })
+        );
+        
+        items = dedupeAnime([...aiItems.filter(Boolean), ...items]).slice(0, 20);
+      } catch (aiErr) {
+        console.warn("Browse AI Trending fallback:", aiErr.message);
+      }
+    } else if (selectedCategory !== "trending" && status !== "current") {
+      // Only shuffle if it's not a strict "Trending" or "Live" request
       items = items.sort(() => Math.random() - 0.5);
     }
     
@@ -302,6 +323,17 @@ export const getEpisodes = async (req, res) => {
       totalCount = resp.data.meta.count || totalCount;
     });
 
+    // Fetch Anime Status to help with unreleased episode detection
+    let animeStatus = "tba";
+    let animeEpisodeCount = null;
+    try {
+      const animeResp = await axios.get(`https://kitsu.io/api/edge/anime/${id}`, { timeout: 5000 });
+      animeStatus = animeResp.data.data.attributes.status;
+      animeEpisodeCount = animeResp.data.data.attributes.episodeCount;
+    } catch (e) {
+      console.warn(`[GET_EPISODES] Failed to fetch anime status:`, e.message);
+    }
+
     // 2. Fetch Deep Metadata (Ratings/Runtime) from Jikan fallback
     try {
       const mappingUrl = `https://kitsu.io/api/edge/anime/${id}/mappings`;
@@ -311,14 +343,35 @@ export const getEpisodes = async (req, res) => {
       if (malMapping) {
         const malId = malMapping.attributes.externalId;
         
-        // Fetch both /videos (for thumbnails) and /episodes (for ratings/runtime)
-        const [videosResp, jikanEpResp] = await Promise.allSettled([
+        const firstEpNum = numericOffset + 1;
+        const lastEpNum = numericOffset + numericLimit;
+        const startJikanPage = Math.ceil(firstEpNum / 100);
+        const endJikanPage = Math.ceil(lastEpNum / 100);
+        
+        const jikanReqs = [];
+        for (let p = startJikanPage; p <= endJikanPage; p++) {
+          jikanReqs.push(axios.get(`https://api.jikan.moe/v4/anime/${malId}/episodes?page=${p}`, { timeout: 8000 }));
+        }
+
+        const [videosResp, ...jikanResps] = await Promise.allSettled([
           axios.get(`https://api.jikan.moe/v4/anime/${malId}/videos`, { timeout: 8000 }),
-          axios.get(`https://api.jikan.moe/v4/anime/${malId}/episodes`, { timeout: 8000 })
+          ...jikanReqs
         ]);
 
         const jikanVideos = videosResp.status === 'fulfilled' ? videosResp.value.data.data?.episodes : [];
-        const jikanDetails = jikanEpResp.status === 'fulfilled' ? jikanEpResp.value.data.data : [];
+        
+        let jikanDetails = [];
+        let jikanSuccess = false;
+
+        jikanResps.forEach(r => {
+          if (r.status === 'fulfilled') {
+            jikanDetails = [...jikanDetails, ...r.value.data.data];
+            jikanSuccess = true;
+          } else if (r.reason?.response?.status === 404) {
+            // 404 means page doesn't exist, which implies we are beyond the released episodes. Valid response!
+            jikanSuccess = true;
+          }
+        });
 
         // Merge deep metadata into Kitsu episodes
         allEpisodes = allEpisodes.map(ep => {
@@ -333,8 +386,14 @@ export const getEpisodes = async (req, res) => {
 
           const detailMatch = jikanDetails?.find(d => d.mal_id === epNum);
           if (detailMatch) {
+            const airdate = ep.attributes.airdate ? new Date(ep.attributes.airdate) : null;
+            const isTooRecent = airdate && airdate > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+            
             // Jikan episode scores are often based on 5-star polls, so we normalize to 10
-            ep.attributes.rating = detailMatch.score ? (detailMatch.score * 2).toFixed(1) : null;
+            // If the episode is very recent, the rating is often inaccurate due to low votes.
+            ep.attributes.rating = (detailMatch.score && !isTooRecent && detailMatch.score >= 1) 
+              ? (detailMatch.score * 2).toFixed(1) 
+              : null;
             ep.attributes.isFiller = detailMatch.filler;
             ep.attributes.isRecap = detailMatch.recap;
           }
@@ -344,6 +403,62 @@ export const getEpisodes = async (req, res) => {
       }
     } catch (fallbackErr) {
       console.warn(`[GET_EPISODES] Metadata enrichment fallback failed:`, fallbackErr.message);
+    }
+
+    // Filter out unreleased episodes and dynamically adjust totalCount
+    const now = new Date();
+    let encounteredFuture = false;
+    let maxReleasedNum = 0;
+
+    // Find the highest explicitly released episode number in this chunk
+    allEpisodes.forEach(ep => {
+      if (ep.attributes.airdate && new Date(ep.attributes.airdate) <= now) {
+        const num = parseInt(ep.attributes.number);
+        if (num > maxReleasedNum) maxReleasedNum = num;
+      }
+    });
+    
+    allEpisodes = allEpisodes.filter(ep => {
+      const num = parseInt(ep.attributes.number);
+      let isReleased = true;
+
+      // Ensure we have access to Jikan fallback variables
+      const malId = typeof jikanDetails !== 'undefined'; // Just checking if we entered the block
+
+      // Prioritize Jikan's exact data if the API request was successful
+      if (typeof jikanSuccess !== 'undefined' && jikanSuccess) {
+        const detailMatch = jikanDetails.find(d => d.mal_id === num);
+        if (detailMatch) {
+          ep.attributes.airdate = detailMatch.aired; // Override Kitsu's airdate
+          isReleased = detailMatch.aired ? new Date(detailMatch.aired) <= now : false;
+        } else {
+          // If Jikan succeeded but this episode is completely missing from Jikan, it is an unreleased Kitsu placeholder!
+          isReleased = false;
+        }
+      } else {
+        // Fallback to Kitsu heuristics if Jikan completely timed out
+        if (ep.attributes.airdate) {
+          isReleased = new Date(ep.attributes.airdate) <= now;
+        } else {
+          if (animeEpisodeCount === null) {
+            isReleased = true;
+          } else if (animeStatus === "current" || animeStatus === "upcoming") {
+            isReleased = maxReleasedNum > 0 && num <= maxReleasedNum;
+            if (!isReleased && (ep.attributes.thumbnail || ep.attributes.synopsis)) {
+              isReleased = true;
+            }
+          } else {
+            isReleased = true; 
+          }
+        }
+      }
+
+      if (!isReleased) encounteredFuture = true;
+      return isReleased;
+    });
+
+    if (encounteredFuture) {
+      totalCount = numericOffset + allEpisodes.length;
     }
 
     res.json({
@@ -558,11 +673,16 @@ export const getEpisodeDetail = async (req, res) => {
 
       if (malMapping) {
         const malId = malMapping.attributes.externalId;
-        const jikanEpResp = await axios.get(`https://api.jikan.moe/v4/anime/${malId}/episodes`, { timeout: 8000 });
-        const detailMatch = jikanEpResp.data.data?.find(d => d.mal_id === parseInt(num));
+        const jikanEpResp = await axios.get(`https://api.jikan.moe/v4/anime/${malId}/episodes/${num}`, { timeout: 8000 });
+        const detailMatch = jikanEpResp.data.data;
 
         if (detailMatch) {
-          epData.attributes.rating = detailMatch.score ? (detailMatch.score * 2).toFixed(1) : null;
+          const airdate = detailMatch.aired ? new Date(detailMatch.aired) : null;
+          const isTooRecent = airdate && airdate > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+
+          epData.attributes.rating = (detailMatch.score && !isTooRecent && detailMatch.score >= 1) 
+            ? (detailMatch.score * 2).toFixed(1) 
+            : null;
           epData.attributes.airdate = detailMatch.aired;
           epData.attributes.isFiller = detailMatch.filler;
         }
