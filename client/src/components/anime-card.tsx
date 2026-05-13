@@ -115,24 +115,31 @@ export function AnimeCard({ anime, size = "md", showProgress, showMatch, layout 
           </div>
         )}
 
-        {/* Top left: match % */}
-        {showMatch && anime.matchPercent && (
-          <div className="absolute left-2 top-2 rounded-full bg-gradient-primary px-2 py-0.5 text-[10px] font-bold text-primary-foreground shadow-glow">
-            {anime.matchPercent}% Match
+        {/* Top left: match % and mobile rating */}
+        <div className="absolute left-2 top-2 flex flex-col gap-1 items-start z-10">
+          {showMatch && anime.matchPercent && (
+            <div className="rounded-full bg-gradient-primary px-2 py-0.5 text-[10px] font-bold text-primary-foreground shadow-glow">
+              {anime.matchPercent}% Match
+            </div>
+          )}
+          {/* Rating pill moved to top-left on mobile to avoid overlapping with bottom quick actions */}
+          <div className="flex lg:hidden items-center gap-1 rounded-full bg-background/70 px-2 py-0.5 text-[10px] font-semibold backdrop-blur">
+            <Star className="h-2.5 w-2.5 fill-primary text-primary" />
+            <span className="text-foreground">{(anime.rating / 10).toFixed(1)}</span>
           </div>
-        )}
+        </div>
 
-        {/* Bottom right: rating pill */}
-        <div className="absolute bottom-2 right-2 flex items-center gap-1 rounded-full bg-background/70 px-2 py-1 text-xs font-semibold backdrop-blur">
+        {/* Bottom right: rating pill (Desktop only) */}
+        <div className="hidden lg:flex absolute bottom-2 right-2 items-center gap-1 rounded-full bg-background/70 px-2 py-1 text-xs font-semibold backdrop-blur transition-opacity duration-300 group-hover:opacity-0 z-0">
           <Star className="h-3 w-3 fill-primary text-primary" />
           <span className="text-foreground">{(anime.rating / 10).toFixed(1)}</span>
         </div>
 
-        {/* Hover overlay */}
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+        {/* Hover overlay - Always visible on mobile */}
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent opacity-100 lg:opacity-0 transition-opacity duration-300 lg:group-hover:opacity-100" />
 
-        {/* Hover quick actions */}
-        <div className="absolute inset-x-2 bottom-2 flex translate-y-2 items-center gap-1 opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
+        {/* Hover quick actions - Always visible on mobile */}
+        <div className="absolute inset-x-2 bottom-2 flex translate-y-0 lg:translate-y-2 items-center gap-1 opacity-100 lg:opacity-0 transition-all duration-300 lg:group-hover:translate-y-0 lg:group-hover:opacity-100 z-10">
           <button
             type="button"
             onClick={(e) => {
