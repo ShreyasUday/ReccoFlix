@@ -8,7 +8,9 @@
   <a href="https://github.com/ShreyasUday/ReccoFlix/blob/main/LICENSE"><img alt="License" src="https://img.shields.io/badge/license-ISC-blue.svg" /></a>
   <img alt="Node Version" src="https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen.svg" />
   <img alt="Status" src="https://img.shields.io/badge/status-actively%20maintained-brightgreen" />
-</p>
+</p>  
+
+> **Live at:** [reccoflix.app](https://reccoflix.app)
 
 ---
 
