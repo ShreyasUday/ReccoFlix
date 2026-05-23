@@ -13,6 +13,7 @@ import authRoutes from "./src/routes/authRoutes.js";
 import userRoutes from "./src/routes/userRoutes.js";
 import animeRoutes from "./src/routes/animeRoutes.js";
 import infoRoutes from "./src/routes/infoRoutes.js";
+import { errorHandler, notFoundHandler } from "./src/middleware/index.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -131,6 +132,10 @@ app.use(async (req, res, next) => {
   // Final fallback
   res.status(200).send("ReccoFlix is initializing...");
 });
+
+// Error Handling Middleware (must be last)
+app.use(notFoundHandler);
+app.use(errorHandler);
 
 app.listen(port, () => {
   console.log(`🚀 ReccoFlix Pro Server running on port ${port}`);

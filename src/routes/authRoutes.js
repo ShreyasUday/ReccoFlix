@@ -1,25 +1,17 @@
 import express from "express";
 import passport from "passport";
-import rateLimit from "express-rate-limit";
 import * as authController from "../controllers/authController.js";
 import { isGoogleAuthConfigured } from "../config/passport.js";
+import { authLimiter } from "../middleware/index.js";
 
 const router = express.Router();
-
-const forgotPasswordLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 5,
-  message: "Too many password reset requests. Please try again later.",
-  standardHeaders: true,
-  legacyHeaders: false,
-});
 
 router.get("/me", authController.getMe);
 router.post("/login", authController.postLogin);
 router.post("/register", authController.postRegister);
 router.get("/logout", authController.logout);
 
-router.post("/forgot-password", forgotPasswordLimiter, authController.postForgotPassword);
+router.post("/forgot-password", authLimiter, authController.postForgotPassword);
 router.post("/reset-password/:token", authController.postResetPassword);
 
 // Google OAuth

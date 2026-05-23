@@ -407,6 +407,9 @@ Content-Type: application/json
 Response 200:
 { "message": "Reset link sent (if account exists)" }
 
+Response 429: { "error": "Too many password reset requests. Please try again later." }
+
+# Rate Limited: 5 requests per 15 minutes per IP
 # Email contains link like: /reset-password?token=<JWT_TOKEN>
 # Token expires: 6 hours
 ```
@@ -668,6 +671,84 @@ All errors follow this format:
 - `429`: Too many requests (rate limit exceeded)
 - `502`: Bad Gateway (external API failed)
 - `503`: Service unavailable
+
+### Rate Limiting Reference
+
+ReccoFlix implements rate limiting to protect API endpoints from abuse and ensure fair usage for all users.
+
+#### Endpoints with Rate Limiting
+
+| Endpoint | Method | Limit | Window | Response |
+|:---------|:-------|:------|:-------|:---------|
+| `/api/auth/forgot-password` | POST | 5 | 15 min | 429 + headers |
+
+#### Rate Limit Response Headers
+
+When a rate limit is in effect, responses include the following HTTP headers:
+
+```
+RateLimit-Limit: 5                    # Max requests allowed
+RateLimit-Remaining: 3                # Requests remaining
+RateLimit-Reset: 1685953100           # Unix timestamp of reset time
+```
+
+#### Handling Rate Limits
+
+**When you hit a rate limit (429 response):**
+1. Read the `RateLimit-Reset` header to know when to retry
+2. Wait until the reset time before making another request
+3. Implement exponential backoff for retry logic
+
+**Example implementation** (JavaScript):
+```javascript
+async function makeRequest(url, options = {}) {
+  const response = await fetch(url, options);
+  
+  if (response.status === 429) {
+    const resetTime = parseInt(response.headers.get('RateLimit-Reset')) * 1000;
+    const waitMs = resetTime - Date.now();
+    console.log(`Rate limited. Waiting ${waitMs}ms...`);
+    
+    await new Promise(resolve => setTimeout(resolve, Math.max(0, waitMs)));
+    return makeRequest(url, options); // Retry
+  }
+  
+  return response;
+}
+```
+
+#### Rate Limit Best Practices
+
+1. **Monitor Rate Limit Headers**: Check `RateLimit-Remaining` to anticipate limits
+   ```javascript
+   const remaining = parseInt(response.headers.get('RateLimit-Remaining'));
+   if (remaining < 2) {
+     console.warn('Approaching rate limit. Consider caching responses.');
+   }
+   ```
+
+2. **Cache Sensitive Endpoints**: Reduce API calls by caching password reset requests
+   ```javascript
+   const cache = new Map();
+   cache.set(`forgot-password:${email}`, timestamp);
+   // Check cache before sending request
+   ```
+
+3. **Batch Requests When Possible**: Group multiple operations into fewer API calls
+
+4. **Use Exponential Backoff**: Gradually increase wait time on repeated failures
+   ```javascript
+   let retries = 0;
+   while (retries < 5) {
+     try {
+       return await makeRequest(url);
+     } catch (error) {
+       retries++;
+       const waitMs = Math.pow(2, retries) * 1000;
+       await new Promise(resolve => setTimeout(resolve, waitMs));
+     }
+   }
+   ```
 
 ---
 
@@ -1102,11 +1183,53 @@ docker compose up -d --build
    })
    ```
 
-2. **Rate Limiting**: Tiered by endpoint
-   - Auth endpoints: 10 req/min per IP
-   - Password reset: 5 req/15min per IP
-   - General API: 100 req/min per IP
-   - Groq integration: 100 req/min total (shared budget)
+2. **Rate Limiting**: Multi-layer protection via express-rate-limit
+   
+   **Authentication Endpoints** (Password Reset):
+   - `/api/auth/forgot-password`: **5 requests per 15 minutes** per IP
+   - Implemented using `express-rate-limit` with in-memory store
+   - Returns 429 status with message: "Too many password reset requests. Please try again later."
+   - Prevents brute-force password reset attacks
+   
+   **AI/Groq Endpoints** (Token Conservation):
+   - `/api/anime/recommendations`, `/api/anime/mood`, `/api/anime/share-line`, `/api/anime/episodes`: **10 requests per 8 minutes** per user
+   - Rate limited by user ID (authenticated) or session ID (rate limit by user, not IP)
+   - Critical for Groq free tier (500K tokens/month, ~10K per request)
+   - Design ensures sustainable usage: ~50 requests/month total across all users
+   - Endpoints affected: recommendations, mood search, share hooks, episode details
+   
+   **Configuration Examples**:
+   ```javascript
+   // Auth limiter (password reset)
+   const authLimiter = rateLimit({
+     windowMs: 15 * 60 * 1000,
+     max: 5,
+     message: "Too many password reset requests. Please try again later.",
+     standardHeaders: true,
+     legacyHeaders: false,
+   });
+   
+   // AI limiter (Groq requests)
+   const aiLimiter = rateLimit({
+     windowMs: 8 * 60 * 1000,           // 8 minute window
+     max: 10,                           // 10 requests per window
+     message: "Too many AI requests. Please wait a moment before trying again.",
+     keyGenerator: (req) => req.user?.id || req.sessionID || req.ip,  // Rate by user
+   });
+   ```
+   
+   **Rate Limit Headers**:
+   - `RateLimit-Limit`: Total requests allowed in window
+   - `RateLimit-Remaining`: Requests remaining
+   - `RateLimit-Reset`: Unix timestamp when limit resets
+   
+   **Best Practices for Clients**:
+   - Check `RateLimit-Remaining` before making requests to sensitive endpoints
+   - Implement exponential backoff on 429 responses
+   - Don't retry immediately; wait for `RateLimit-Reset`
+   - Cache AI responses aggressively (recommendations valid for 24 hours)
+   - For Groq endpoints: batch requests when possible and use cached results
+
 
 3. **Input Validation**: All inputs sanitized via Prisma + express-validator
    ```javascript
@@ -1199,15 +1322,22 @@ ReccoFlix/
 │   │   ├── userRoutes.js
 │   │   └── infoRoutes.js
 │   ├── services/
-│   │   └── aiService.js              # Groq LLM integration (5 AI functions)
-│   │       ├── getAIRecommendations()
-│   │       ├── generateShareLine()
-│   │       ├── generateMoodRecommendations()
-│   │       ├── generateSynopsis()
-│   │       └── generateEpisodeNarrative()
-│   └── middleware/                   # Express middleware
-│       ├── errorHandler.js           # Centralized error handling
-│       └── authMiddleware.js         # Session/auth verification
+│   │   └── ai/                           # Modularized Groq LLM integration
+│   │       ├── index.js                  # Central export point
+│   │       ├── recommendations.js        # AI-powered anime recommendations
+│   │       ├── shareHooks.js             # Social share line generation
+│   │       ├── synopsis.js               # AI synopsis generation (anime + episodes)
+│   │       ├── mood.js                   # Mood-based recommendations
+│   │       ├── trending.js               # Trending anime curation
+│   │       └── kitsuFetch.js             # Kitsu API metadata fetching
+│   └── middleware/                       # Express middleware (modularized)
+│       ├── index.js                      # Central export point
+│       ├── authMiddleware.js             # Session/auth verification
+│       ├── errorHandler.js               # Centralized error handling
+│       └── rateLimiters/
+│           ├── authLimiter.js            # Password reset (5 per 15min)
+│           ├── aiLimiter.js              # Groq requests (10 per 8min per user)
+│           └── generalLimiter.js         # General API (100 per min)
 │
 ├── prisma/
 │   └── schema.prisma                 # Database schema (source of truth)
@@ -1219,6 +1349,48 @@ ReccoFlix/
 ├── index.js                          # Express entry point
 ├── package.json
 └── README.md                         # This file
+```
+
+### Modular Architecture Guide
+
+#### AI Services (`src/services/ai/`)
+
+The AI service layer is modularized for maintainability and testability. Each function is in its own file:
+
+| Module | Purpose | Groq Cost |
+|:-------|:--------|:----------|
+| `recommendations.js` | Generate 15 anime recommendations from user library | ~10K tokens |
+| `mood.js` | Generate 10 anime based on mood/vibe description | ~8K tokens |
+| `shareHooks.js` | Create social media share hooks (1-liners) | ~2K tokens |
+| `synopsis.js` | Generate anime synopsis and episode narratives | ~5-8K tokens |
+| `trending.js` | Curate 20 trending anime from API signals | ~8K tokens |
+| `kitsuFetch.js` | Fetch anime metadata from Kitsu API (no Groq usage) | 0 tokens |
+
+**Key Design**: Each function is independently importable and tested. `index.js` serves as the central export point:
+```javascript
+import { getAIRecommendations } from "./services/ai/index.js";
+```
+
+#### Middleware System (`src/middleware/`)
+
+Rate limiting and error handling are modularized by concern:
+
+**Rate Limiters** (`rateLimiters/`):
+- `authLimiter.js`: 5 requests per 15 minutes (password reset attacks)
+- `aiLimiter.js`: **10 requests per 8 minutes per user** (Groq token conservation)
+  - Allows 75 requests/hour, 1800/day per user
+  - Shared 500K token quota across all users
+  - Gracefully degrades with helpful retry headers
+- `generalLimiter.js`: 100 requests per minute (general endpoints)
+
+**Middleware Files**:
+- `authMiddleware.js`: Session verification for protected routes
+- `errorHandler.js`: Centralized error responses with proper status codes
+
+**Usage in Routes**:
+```javascript
+import { aiLimiter } from "../middleware/index.js";
+router.get("/recommendations", aiLimiter, animeController.getRecommendations);
 ```
 
 ### Adding a New Feature: Step-by-Step
