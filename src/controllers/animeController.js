@@ -6,7 +6,7 @@ import {
   getMoodRecommendations,
   generateEpisodeAISynopsis,
   getTrendingRecommendations
-} from "../services/aiService.js";
+} from "../services/ai/index.js";
 import { prisma } from "../config/database.js";
 import axios from "axios";
 
