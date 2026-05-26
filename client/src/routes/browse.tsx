@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { genres, genreIcons, type Anime } from "@/lib/mock-anime";
+import { genres, type Anime } from "@/lib/mock-anime";
 import { AnimeCard } from "@/components/anime-card";
 import { fetchBrowse } from "@/lib/api";
 import { Filter, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
@@ -70,13 +70,13 @@ function BrowsePage() {
         <p className="mt-1 text-sm text-muted-foreground">Discover anime across every genre.</p>
       </header>
 
-      {/* Genre Grid */}
+      {/* Genre Categories */}
       <section>
         <h2 className="mb-4 flex items-center gap-2 text-lg font-bold">
           <Filter className="h-4 w-4 text-primary" />
           Categories
         </h2>
-        <div className="grid grid-cols-3 gap-2 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10">
+        <div className="flex flex-wrap gap-2 sm:gap-2.5">
           {genres.map((g) => {
             const slug = g.toLowerCase().replace(/ /g, "-");
             const isActive = activeCategory === slug;
@@ -85,16 +85,13 @@ function BrowsePage() {
                 key={g}
                 onClick={() => handleCategoryChange(g)}
                 className={cn(
-                  "group flex flex-col items-center gap-1.5 rounded-xl border p-2.5 sm:p-4 transition-smooth",
+                  "rounded-full px-5 py-2.5 text-xs font-bold tracking-wide transition-all duration-300 border hover:scale-[1.03] active:scale-[0.97]",
                   isActive
-                    ? "border-primary/60 bg-gradient-primary/20 shadow-glow"
-                    : "border-white/5 glass hover:border-primary/30 hover:bg-white/5",
+                    ? "border-primary bg-gradient-primary/20 text-white shadow-glow"
+                    : "border-white/5 bg-white/[0.02] text-muted-foreground hover:border-white/20 hover:bg-white/5 hover:text-white",
                 )}
               >
-                <span className="text-xl sm:text-2xl transition-transform group-hover:scale-125 shrink-0">{genreIcons[g] ?? "✨"}</span>
-                <span className="text-[9px] sm:text-[10px] md:text-xs font-semibold truncate w-full text-center px-1">
-                  {g}
-                </span>
+                {g}
               </button>
             );
           })}

@@ -42,7 +42,7 @@ export const generateAISynopsis = async (title, kitsuData = {}) => {
 };
 
 /**
- * Generates a detailed, atmospheric synopsis for a specific episode
+ * Generates a detailed, atmospheric synopsis and dynamic intelligence dossier for a specific episode
  */
 export const generateEpisodeAISynopsis = async (animeTitle, episodeNum, episodeTitle = "", seriesSynopsis = "", currentSummary = "") => {
   if (!process.env.GROQ_API_KEY) return null;
@@ -50,7 +50,7 @@ export const generateEpisodeAISynopsis = async (animeTitle, episodeNum, episodeT
   try {
     const prompt = `
       You are a specialized anime archivist and narrative analyst. 
-      Generate a factual, high-fidelity 1-paragraph plot analysis for Episode ${episodeNum} of the anime "${animeTitle}".
+      Analyze Episode ${episodeNum} of the anime "${animeTitle}" and synthesize a thematic intelligence dossier.
       
       CRITICAL CONTEXT:
       - Series: ${animeTitle}
@@ -59,24 +59,30 @@ export const generateEpisodeAISynopsis = async (animeTitle, episodeNum, episodeT
       - Episode Title: ${episodeTitle || "Unknown"}
       - Existing metadata: "${currentSummary.substring(0, 300)}"
       
+      Return a JSON object with:
+      "synopsis": A factual, high-fidelity 1-paragraph plot analysis (3-5 sentences). Combine the premise and episode title/context to deduce what challenges or narrative milestones occur. Write in a sophisticated, cinematic, and investigative tone. NEVER say you don't know or apologize.
+      "rating": An estimated episode-specific rating (floating number between 7.5 and 9.8) based on how epic/important this episode is in the series context.
+      "length": Estimated episode length in minutes (typically 24).
+      "archivistNote": A single-sentence cryptic, thematic, or highly analytical note from a cyber-archivist tracking the characters (max 20 words). Examples: "Handa's isolation matrix is fracturing; the social anomalies are becoming self-sustaining." or "The timeline oscillates. Okabe's signal grows fainter."
+
       Rules:
-      1. NARRATIVE SYNERGY: Combine the "Series Premise" and "Episode Title" to deduce the narrative stage. If specific metadata is missing, use the premise to write an engaging, thematic, and speculative preview of what challenges might await in Episode ${episodeNum}.
-      2. IMMERSION FIRST: NEVER apologize, NEVER state that you lack metadata, and NEVER break character. Always write as if you are uncovering the plot.
-      3. TONE: Professional, cinematic, and investigative.
-      4. Length: 3-5 sentences.
-      5. Return ONLY the analysis text.
+      1. Return ONLY the JSON object.
+      2. Keep the tone completely immersive, cinematic, and analytical.
     `;
 
     const chatCompletion = await groq.chat.completions.create({
       messages: [{ role: "user", content: prompt }],
       model: "llama-3.1-8b-instant",
-      temperature: 0.6,
-      max_tokens: 300
+      temperature: 0.65,
+      max_tokens: 400,
+      response_format: { type: "json_object" }
     });
 
-    return chatCompletion.choices[0]?.message?.content.trim();
+    const responseText = chatCompletion.choices[0]?.message?.content;
+    const result = JSON.parse(responseText);
+    return result;
   } catch (err) {
-    console.error(`❌ AI ENGINE: Episode ${episodeNum} synopsis failed:`, err.message);
+    console.error(`❌ AI ENGINE: Episode ${episodeNum} synthesis failed:`, err.message);
     return null;
   }
 };

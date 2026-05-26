@@ -1,4 +1,4 @@
-import rateLimit from "express-rate-limit";
+import rateLimit, { ipKeyGenerator } from "express-rate-limit";
 
 /**
  * Auth endpoints rate limiter
@@ -11,5 +11,5 @@ export const authLimiter = rateLimit({
   message: "Too many password reset requests. Please try again later.",
   standardHeaders: true, // Return RateLimit-* headers
   legacyHeaders: false, // Disable X-RateLimit-* headers
-  keyGenerator: (req) => req.ip, // Rate limit by IP
+  keyGenerator: ipKeyGenerator, // Rate limit by IP (IPv6 safe)
 });

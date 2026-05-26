@@ -12,14 +12,14 @@ export const Route = createFileRoute("/mood")({
 });
 
 const MOODS = [
-  { id: "cozy", label: "Cozy", emoji: "☕", desc: "Warm, wholesome slice-of-life vibes", icon: Coffee, gradient: "from-amber-500 to-orange-600" },
-  { id: "action", label: "Action Rush", emoji: "⚡", desc: "Adrenaline-pumping battles & fights", icon: Zap, gradient: "from-yellow-400 to-red-500" },
-  { id: "romantic", label: "Romantic", emoji: "💖", desc: "Heartfelt love stories & confessions", icon: Heart, gradient: "from-pink-400 to-rose-600" },
-  { id: "mind-bending", label: "Mind-bending", emoji: "🧠", desc: "Psychological twists & deep plots", icon: Brain, gradient: "from-violet-500 to-purple-700" },
-  { id: "comedy", label: "Comedy", emoji: "😂", desc: "Non-stop laughs & absurd humor", icon: Laugh, gradient: "from-green-400 to-emerald-600" },
-  { id: "dark", label: "Dark & Gritty", emoji: "👻", desc: "Horror, thriller & mature themes", icon: Ghost, gradient: "from-slate-500 to-gray-800" },
-  { id: "epic", label: "Epic Adventure", emoji: "⚔️", desc: "Grand journeys & world-building", icon: Swords, gradient: "from-cyan-400 to-blue-600" },
-  { id: "nostalgic", label: "Nostalgic", emoji: "🧭", desc: "Classic anime that shaped the genre", icon: Compass, gradient: "from-teal-400 to-indigo-500" },
+  { id: "cozy", label: "Cozy", desc: "Warm, wholesome slice-of-life vibes", icon: Coffee, gradient: "from-amber-500 to-orange-600" },
+  { id: "action", label: "Action Rush", desc: "Adrenaline-pumping battles & fights", icon: Zap, gradient: "from-yellow-400 to-red-500" },
+  { id: "romantic", label: "Romantic", desc: "Heartfelt love stories & confessions", icon: Heart, gradient: "from-pink-400 to-rose-600" },
+  { id: "mind-bending", label: "Mind-bending", desc: "Psychological twists & deep plots", icon: Brain, gradient: "from-violet-500 to-purple-700" },
+  { id: "comedy", label: "Comedy", desc: "Non-stop laughs & absurd humor", icon: Laugh, gradient: "from-green-400 to-emerald-600" },
+  { id: "dark", label: "Dark & Gritty", desc: "Horror, thriller & mature themes", icon: Ghost, gradient: "from-slate-500 to-gray-800" },
+  { id: "epic", label: "Epic Adventure", desc: "Grand journeys & world-building", icon: Swords, gradient: "from-cyan-400 to-blue-600" },
+  { id: "nostalgic", label: "Nostalgic", desc: "Classic anime that shaped the genre", icon: Compass, gradient: "from-teal-400 to-indigo-500" },
 ];
 
 function MoodPage() {
@@ -29,13 +29,18 @@ function MoodPage() {
   const [activeMood, setActiveMood] = useState<string | null>(null);
 
   const handleMoodSelect = async (mood: typeof MOODS[0]) => {
+    const isSameMood = selected === mood.id;
+    const exclude = isSameMood
+      ? [...results.map((r: any) => r.id), ...results.map((r: any) => r.title)]
+      : [];
+
     setSelected(mood.id);
     setLoading(true);
     setResults([]);
     setActiveMood(mood.label);
 
     try {
-      const data = await fetchMoodAnime(mood.label);
+      const data = await fetchMoodAnime(mood.label, exclude);
       setResults(data.results || []);
     } catch (err) {
       console.error("Mood fetch failed:", err);
@@ -66,24 +71,29 @@ function MoodPage() {
 
       {/* Mood Grid */}
       <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        {MOODS.map((mood) => (
-          <button
-            key={mood.id}
-            onClick={() => handleMoodSelect(mood)}
-            disabled={loading}
-            className={`group relative overflow-hidden rounded-2xl border p-5 text-left transition-all duration-300 hover:-translate-y-1 hover:shadow-glow disabled:opacity-50 ${
-              selected === mood.id
-                ? "border-primary bg-primary/10 shadow-glow"
-                : "border-white/5 glass hover:border-white/20"
-            }`}
-          >
-            <span className="text-3xl">{mood.emoji}</span>
-            <h3 className="mt-3 text-sm font-extrabold">{mood.label}</h3>
-            <p className="mt-1 text-[10px] font-bold uppercase tracking-widest text-success">AI Curated</p>
-            {/* Subtle gradient glow on hover */}
-            <div className={`absolute inset-0 bg-gradient-to-br ${mood.gradient} opacity-0 transition-opacity duration-500 group-hover:opacity-[0.06] ${selected === mood.id ? "opacity-[0.08]" : ""}`} />
-          </button>
-        ))}
+        {MOODS.map((mood) => {
+          const Icon = mood.icon;
+          return (
+            <button
+              key={mood.id}
+              onClick={() => handleMoodSelect(mood)}
+              disabled={loading}
+              className={`group relative overflow-hidden rounded-2xl border p-5 text-left transition-all duration-300 hover:-translate-y-1 hover:shadow-glow disabled:opacity-50 ${
+                selected === mood.id
+                  ? "border-primary bg-primary/10 shadow-glow"
+                  : "border-white/5 glass hover:border-white/20"
+              }`}
+            >
+              <Icon className={`h-8 w-8 transition-all duration-300 ${
+                selected === mood.id ? "text-primary scale-110" : "text-white/40 group-hover:text-white group-hover:scale-110"
+              }`} />
+              <h3 className="mt-3 text-sm font-extrabold">{mood.label}</h3>
+              <p className="mt-1 text-[10px] font-bold uppercase tracking-widest text-success">AI Curated</p>
+              {/* Subtle gradient glow on hover */}
+              <div className={`absolute inset-0 bg-gradient-to-br ${mood.gradient} opacity-0 transition-opacity duration-500 group-hover:opacity-[0.06] ${selected === mood.id ? "opacity-[0.08]" : ""}`} />
+            </button>
+          );
+        })}
       </section>
 
       {/* Loading State */}
@@ -110,12 +120,24 @@ function MoodPage() {
               </h2>
               <p className="mt-1 text-xs text-muted-foreground">{results.length} AI-curated results</p>
             </div>
-            <button
-              onClick={() => { setSelected(null); setResults([]); setActiveMood(null); }}
-              className="flex items-center gap-2 rounded-full glass-strong px-4 py-2 text-xs font-bold hover:bg-white/10 transition-smooth"
-            >
-              <ArrowLeft className="h-3.5 w-3.5" /> Pick another mood
-            </button>
+            <div className="flex gap-2.5">
+              <button
+                onClick={() => {
+                  const currentMood = MOODS.find((m) => m.id === selected);
+                  if (currentMood) handleMoodSelect(currentMood);
+                }}
+                disabled={loading}
+                className="flex items-center gap-2 rounded-full bg-gradient-primary px-4 py-2 text-xs font-extrabold text-primary-foreground shadow-glow hover:scale-[1.02] active:scale-[0.98] transition-smooth disabled:opacity-50 disabled:hover:scale-100"
+              >
+                <Sparkles className="h-3.5 w-3.5" /> Get New Picks
+              </button>
+              <button
+                onClick={() => { setSelected(null); setResults([]); setActiveMood(null); }}
+                className="flex items-center gap-2 rounded-full glass-strong px-4 py-2 text-xs font-bold hover:bg-white/10 transition-smooth"
+              >
+                <ArrowLeft className="h-3.5 w-3.5" /> Pick another mood
+              </button>
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">

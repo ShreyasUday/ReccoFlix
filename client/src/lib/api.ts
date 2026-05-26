@@ -217,7 +217,8 @@ export const fetchRecommendations = async (): Promise<{ recommendations: Anime[]
   }
 };
 
-export const fetchMoodAnime = async (mood: string) => {
-  const res = await api.get(`/anime/mood?mood=${encodeURIComponent(mood)}`);
+export const fetchMoodAnime = async (mood: string, exclude: string[] = []) => {
+  const excludeParam = exclude.length > 0 ? `&exclude=${encodeURIComponent(exclude.join(","))}` : "";
+  const res = await api.get(`/anime/mood?mood=${encodeURIComponent(mood)}${excludeParam}`);
   return res.data;
 };

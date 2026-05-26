@@ -169,7 +169,7 @@ function EpisodeDetailsPage() {
                      <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Archive Rating</span>
                    </div>
                    <div className="text-3xl font-black text-white">
-                      8.4 <span className="text-[10px] text-white/20">/ 10.0</span>
+                      {attrs.rating ? attrs.rating : animeAttrs?.averageRating ? (parseFloat(animeAttrs.averageRating) / 10).toFixed(1) : "N/A"} <span className="text-[10px] text-white/20">/ 10.0</span>
                    </div>
                  </div>
                </div>

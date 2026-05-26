@@ -8,12 +8,17 @@ import passport from "passport";
 import session from "express-session";
 import { configurePassport } from "./src/config/passport.js";
 import dotenv from "dotenv";
+
+// Fix BigInt serialization globally for JSON responses (e.g. Prisma reset_password_expires)
+BigInt.prototype.toJSON = function () {
+  return Number(this);
+};
 import db from "./src/config/database.js";
 import authRoutes from "./src/routes/authRoutes.js";
 import userRoutes from "./src/routes/userRoutes.js";
 import animeRoutes from "./src/routes/animeRoutes.js";
 import infoRoutes from "./src/routes/infoRoutes.js";
-import { errorHandler, notFoundHandler } from "./src/middleware/index.js";
+import { errorHandler, notFoundHandler, generalLimiter } from "./src/middleware/index.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -49,6 +54,10 @@ app.use(session({
 app.use(passport.initialize());
 app.use(passport.session());
 configurePassport(passport);
+
+// API Rate Limiting
+app.use("/api", generalLimiter);
+app.use("/auth", generalLimiter);
 
 // API Routes
 app.use("/auth", authRoutes);

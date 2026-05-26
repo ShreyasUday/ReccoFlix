@@ -1,4 +1,4 @@
-import rateLimit from "express-rate-limit";
+import rateLimit, { ipKeyGenerator } from "express-rate-limit";
 
 /**
  * General API rate limiter
@@ -11,5 +11,5 @@ export const generalLimiter = rateLimit({
   message: "Too many requests. Please try again later.",
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: (req) => req.ip, // Rate limit by IP
+  keyGenerator: ipKeyGenerator, // Rate limit by IP (IPv6 safe)
 });

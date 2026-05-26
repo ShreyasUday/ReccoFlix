@@ -315,18 +315,32 @@ function ArchivePage() {
                       </div>
                    </section>
 
-                   <div className="flex items-center justify-between p-6 sm:p-10 glass rounded-[2rem] sm:rounded-[2.5rem] border border-white/5 group cursor-pointer hover:bg-white/5 transition-colors">
-                      <div className="space-y-1">
-                        <p className="text-[8px] sm:text-[10px] font-black uppercase tracking-widest text-primary">Next Phase</p>
-                        <h4 className="text-lg sm:text-xl font-black tracking-tighter">Continue Discovery</h4>
-                      </div>
-                      <button 
-                        onClick={() => handleEpSelect((parseInt(activeEp) + 1).toString())}
-                        className="h-12 w-12 sm:h-14 sm:w-14 rounded-full bg-white/5 flex items-center justify-center border border-white/10 group-hover:bg-primary group-hover:border-primary group-hover:text-primary-foreground transition-all duration-500"
-                      >
-                        <ArrowRight className="h-5 w-5 sm:h-6 sm:w-6" />
-                      </button>
-                   </div>
+                   {parseInt(activeEp) < totalEpisodes ? (
+                     <div className="flex items-center justify-between p-6 sm:p-10 glass rounded-[2rem] sm:rounded-[2.5rem] border border-white/5 group cursor-pointer hover:bg-white/5 transition-colors">
+                        <div className="space-y-1">
+                          <p className="text-[8px] sm:text-[10px] font-black uppercase tracking-widest text-primary">Next Phase</p>
+                          <h4 className="text-lg sm:text-xl font-black tracking-tighter">Continue Discovery</h4>
+                        </div>
+                        <button 
+                          onClick={() => handleEpSelect((parseInt(activeEp) + 1).toString())}
+                          className="h-12 w-12 sm:h-14 sm:w-14 rounded-full bg-white/5 flex items-center justify-center border border-white/10 group-hover:bg-primary group-hover:border-primary group-hover:text-primary-foreground transition-all duration-500"
+                        >
+                          <ArrowRight className="h-5 w-5 sm:h-6 sm:w-6" />
+                        </button>
+                     </div>
+                   ) : (
+                     <div className="flex items-center justify-between p-6 sm:p-10 glass rounded-[2rem] sm:rounded-[2.5rem] border border-success/20 bg-success/5 relative overflow-hidden">
+                        <div className="absolute -right-10 -top-10 h-32 w-32 rounded-full bg-success/5 blur-2xl" />
+                        <div className="space-y-1 relative z-10">
+                          <p className="text-[8px] sm:text-[10px] font-black uppercase tracking-widest text-success">End of Series</p>
+                          <h4 className="text-lg sm:text-xl font-black tracking-tighter text-white">Discovery Complete</h4>
+                          <p className="text-[10px] text-muted-foreground/60">All chronological chapters have been successfully archived.</p>
+                        </div>
+                        <div className="h-12 w-12 sm:h-14 sm:w-14 rounded-full bg-success/15 flex items-center justify-center border border-success/30 text-success shadow-[0_0_15px_rgba(34,197,94,0.1)]">
+                          <Sparkles className="h-5 w-5 sm:h-6 sm:w-6" />
+                        </div>
+                     </div>
+                   )}
                 </div>
 
                 {/* Sidebar Stats */}
@@ -378,7 +392,7 @@ function ArchivePage() {
                          <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-white/80">Archivist Note</span>
                       </div>
                       <p className="text-[10px] sm:text-[11px] leading-relaxed text-muted-foreground font-medium italic">
-                        "The narrative weights are shifting. Every chapter reveals more about the true power structure within the institution."
+                        "{attrs.archivistNote || "The narrative weights are shifting. Every chapter reveals more about the true power structure within the institution."}"
                       </p>
                    </div>
                 </div>

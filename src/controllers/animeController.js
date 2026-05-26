@@ -610,33 +610,62 @@ export const getShareLine = async (req, res) => {
 };
 
 export const getMoodAnime = async (req, res) => {
-  const { mood } = req.query;
+  const { mood, exclude } = req.query;
   if (!mood) return res.status(400).json({ error: "Mood is required" });
 
   try {
-    const picks = await getMoodRecommendations(mood);
+    let excludeList = [];
+    if (exclude) {
+      excludeList = typeof exclude === 'string'
+        ? exclude.split(',').map(s => s.trim().toLowerCase()).filter(Boolean)
+        : Array.isArray(exclude) ? exclude.map(s => String(s).trim().toLowerCase()).filter(Boolean) : [];
+    }
 
-    // Enrich each pick with Kitsu metadata
-    const enriched = await Promise.all(
-      picks.map(async (pick) => {
-        const kitsuData = await fetchKitsuDetailsByTitle(pick.title);
-        if (kitsuData) {
-          const attr = kitsuData.attributes;
-          return {
-            id: kitsuData.id,
-            title: attr.canonicalTitle || pick.title,
-            poster: attr.posterImage?.large || attr.posterImage?.medium || null,
-            cover: attr.coverImage?.original || attr.coverImage?.large || null,
-            rating: attr.averageRating || null,
-            synopsis: attr.synopsis?.substring(0, 200) || "",
-            reason: pick.reason,
-          };
-        }
-        return { id: null, title: pick.title, poster: null, cover: null, rating: null, synopsis: "", reason: pick.reason };
-      })
-    );
+    const picks = await getMoodRecommendations(mood, excludeList);
 
-    res.json({ mood, results: enriched.filter((e) => e.id) });
+    const enriched = [];
+    const seenIds = new Set();
+    const seenTitles = new Set();
+
+    for (const pick of picks) {
+      if (enriched.length >= 10) break;
+
+      const pickTitleLower = pick.title.toLowerCase();
+      if (excludeList.includes(pickTitleLower)) continue;
+      if (seenTitles.has(pickTitleLower)) continue;
+
+      const kitsuData = await fetchKitsuDetailsByTitle(pick.title);
+      if (kitsuData) {
+        const id = kitsuData.id;
+        const attr = kitsuData.attributes;
+        const canonicalTitle = attr.canonicalTitle || pick.title;
+        const canonicalTitleLower = canonicalTitle.toLowerCase();
+
+        // Exclude by Kitsu ID or Canonical Title matches
+        if (excludeList.includes(id.toLowerCase())) continue;
+        if (excludeList.includes(canonicalTitleLower)) continue;
+
+        // Deduplicate within the current response batch
+        if (seenIds.has(id)) continue;
+        if (seenTitles.has(canonicalTitleLower)) continue;
+
+        seenIds.add(id);
+        seenTitles.add(canonicalTitleLower);
+        seenTitles.add(pickTitleLower);
+
+        enriched.push({
+          id,
+          title: canonicalTitle,
+          poster: attr.posterImage?.large || attr.posterImage?.medium || null,
+          cover: attr.coverImage?.original || attr.coverImage?.large || null,
+          rating: attr.averageRating || null,
+          synopsis: attr.synopsis?.substring(0, 200) || "",
+          reason: pick.reason,
+        });
+      }
+    }
+
+    res.json({ mood, results: enriched });
   } catch (err) {
     console.error("❌ Mood anime error:", err.message);
     res.status(500).json({ error: "Failed to get mood-based anime" });
@@ -692,31 +721,36 @@ export const getEpisodeDetail = async (req, res) => {
     }
 
     // 3. Narrative Synthesis (AI Enrichment)
-    // Always trigger if synopsis is too short or missing
     const currentSynopsis = epData.attributes.synopsis || "";
-    if (!currentSynopsis || currentSynopsis.length < 100) {
-      try {
-        console.log(`[GET_EPISODE_DETAIL] Triggering AI Narrative for Ep ${num}...`);
-        
-        // Safety timeout for AI call
-        const aiSummary = await Promise.race([
-          generateEpisodeAISynopsis(
-            animeData.attributes.canonicalTitle, 
-            num, 
-            epData.attributes.canonicalTitle, 
-            animeData.attributes.synopsis, 
-            currentSynopsis
-          ),
-          new Promise((_, reject) => setTimeout(() => reject(new Error("AI Timeout")), 8000))
-        ]);
+    try {
+      console.log(`[GET_EPISODE_DETAIL] Triggering AI Narrative for Ep ${num}...`);
+      
+      const aiDossier = await Promise.race([
+        generateEpisodeAISynopsis(
+          animeData.attributes.canonicalTitle, 
+          num, 
+          epData.attributes.canonicalTitle, 
+          animeData.attributes.synopsis, 
+          currentSynopsis
+        ),
+        new Promise((_, reject) => setTimeout(() => reject(new Error("AI Timeout")), 8000))
+      ]);
 
-        if (aiSummary) {
-          console.log(`[GET_EPISODE_DETAIL] AI Narrative successfully generated (${aiSummary.length} chars)`);
-          epData.attributes.synopsis = aiSummary;
+      if (aiDossier) {
+        console.log(`[GET_EPISODE_DETAIL] AI Narrative successfully generated`);
+        if (aiDossier.synopsis && (!currentSynopsis || currentSynopsis.length < 100)) {
+          epData.attributes.synopsis = aiDossier.synopsis;
         }
-      } catch (aiErr) {
-        console.warn(`[GET_EPISODE_DETAIL] AI Narrative skipped/failed:`, aiErr.message);
+        if (!epData.attributes.rating && aiDossier.rating) {
+          epData.attributes.rating = parseFloat(aiDossier.rating).toFixed(1);
+        }
+        if ((!epData.attributes.length || epData.attributes.length === 0) && aiDossier.length) {
+          epData.attributes.length = parseInt(aiDossier.length);
+        }
+        epData.attributes.archivistNote = aiDossier.archivistNote;
       }
+    } catch (aiErr) {
+      console.warn(`[GET_EPISODE_DETAIL] AI Narrative skipped/failed:`, aiErr.message);
     }
 
     console.log(`[GET_EPISODE_DETAIL] Finalizing response for Anime ${id}, Ep ${num}`);
