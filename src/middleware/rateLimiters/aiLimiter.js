@@ -14,12 +14,13 @@ import rateLimit, { ipKeyGenerator } from "express-rate-limit";
 export const aiLimiter = rateLimit({
   windowMs: 8 * 60 * 1000, // 8 minutes
   max: 10, // 10 requests per window
-  message: "Too many AI requests. Please wait a moment before trying again.",
+  message: { error: "Too many AI requests. Please wait a moment before trying again." },
   standardHeaders: true,
   legacyHeaders: false,
   keyGenerator: (req) => {
-    // Rate limit by user ID if authenticated, otherwise by IP
-    return req.user?.id || req.sessionID || ipKeyGenerator(req);
+    // Rate limit by user ID if authenticated, otherwise session, otherwise IP
+    const clientIp = req.ip || req.headers["x-forwarded-for"] || req.socket.remoteAddress || "unknown-ip";
+    return req.user?.id || req.sessionID || ipKeyGenerator(clientIp);
   },
   skip: (req) => {
     // Skip rate limiting for non-AI endpoints
@@ -28,4 +29,8 @@ export const aiLimiter = rateLimit({
            !req.path.includes("/share-line") &&
            !req.path.includes("/episode");
   },
+  handler: (req, res, next, options) => {
+    console.warn(`[RATE LIMIT HIT] AI rate limit triggered for User/IP: ${req.user?.id || req.sessionID || req.ip}`);
+    return res.status(options.statusCode).json(options.message);
+  }
 });

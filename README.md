@@ -1184,39 +1184,50 @@ docker compose up -d --build
    ```
 
 2. **Rate Limiting**: Multi-layer protection via express-rate-limit
-   
-   **Authentication Endpoints** (Password Reset):
-   - `/api/auth/forgot-password`: **5 requests per 15 minutes** per IP
-   - Implemented using `express-rate-limit` with in-memory store
-   - Returns 429 status with message: "Too many password reset requests. Please try again later."
-   - Prevents brute-force password reset attacks
-   
-   **AI/Groq Endpoints** (Token Conservation):
-   - `/api/anime/recommendations`, `/api/anime/mood`, `/api/anime/share-line`, `/api/anime/episodes`: **10 requests per 8 minutes** per user
-   - Rate limited by user ID (authenticated) or session ID (rate limit by user, not IP)
-   - Critical for Groq free tier (500K tokens/month, ~10K per request)
-   - Design ensures sustainable usage: ~50 requests/month total across all users
-   - Endpoints affected: recommendations, mood search, share hooks, episode details
-   
-   **Configuration Examples**:
-   ```javascript
-   // Auth limiter (password reset)
-   const authLimiter = rateLimit({
-     windowMs: 15 * 60 * 1000,
-     max: 5,
-     message: "Too many password reset requests. Please try again later.",
-     standardHeaders: true,
-     legacyHeaders: false,
-   });
-   
-   // AI limiter (Groq requests)
-   const aiLimiter = rateLimit({
-     windowMs: 8 * 60 * 1000,           // 8 minute window
-     max: 10,                           // 10 requests per window
-     message: "Too many AI requests. Please wait a moment before trying again.",
-     keyGenerator: (req) => req.user?.id || req.sessionID || req.ip,  // Rate by user
-   });
-   ```
+    
+    **Login & Registration Endpoints** (Authentication Safeguard):
+    - `/api/auth/login`, `/api/auth/register`: **10 requests per 10 minutes** per IP
+    - Implemented using `express-rate-limit` with in-memory store
+    - Returns 429 status with message: `{ error: "Too many login attempts. Please try again in 10 minutes." }`
+    - Prevents brute-force dictionary attacks and registration spam
+    
+    **Recovery Endpoints** (Password Reset):
+    - `/api/auth/forgot-password`: **5 requests per 15 minutes** per IP
+    - Implemented using `express-rate-limit` with in-memory store
+    - Returns 429 status with message: `{ error: "Too many password reset requests. Please try again later." }`
+    - Prevents brute-force password reset attacks
+    
+    **AI/Groq Endpoints** (Token Conservation):
+    - `/api/anime/recommendations`, `/api/anime/mood`, `/api/anime/share-line`, `/api/anime/episodes`: **10 requests per 8 minutes** per user
+    - Rate limited by user ID (authenticated), session ID, or IPv6-safe IP fallback (rate limit by user, not just IP)
+    - Critical for Groq free tier (500K tokens/month, ~10K per request)
+    - Design ensures sustainable usage: ~50 requests/month total across all users
+    - Endpoints affected: recommendations, mood search, share hooks, episode details
+    
+    **Configuration Examples**:
+    ```javascript
+    // Login limiter (brute-force defense)
+    const loginLimiter = rateLimit({
+      windowMs: 10 * 60 * 1000,
+      max: 10,
+      message: { error: "Too many login attempts. Please try again in 10 minutes." },
+      keyGenerator: (req) => {
+        const clientIp = req.ip || req.headers["x-forwarded-for"] || req.socket.remoteAddress || "unknown-ip";
+        return ipKeyGenerator(clientIp);
+      }
+    });
+    
+    // AI limiter (Groq requests)
+    const aiLimiter = rateLimit({
+      windowMs: 8 * 60 * 1000,           // 8 minute window
+      max: 10,                           // 10 requests per window
+      message: { error: "Too many AI requests. Please wait a moment before trying again." },
+      keyGenerator: (req) => {
+        const clientIp = req.ip || req.headers["x-forwarded-for"] || req.socket.remoteAddress || "unknown-ip";
+        return req.user?.id || req.sessionID || ipKeyGenerator(clientIp);
+      },
+    });
+    ```
    
    **Rate Limit Headers**:
    - `RateLimit-Limit`: Total requests allowed in window
@@ -1335,6 +1346,7 @@ ReccoFlix/
 │       ├── authMiddleware.js             # Session/auth verification
 │       ├── errorHandler.js               # Centralized error handling
 │       └── rateLimiters/
+│           ├── loginLimiter.js           # Login & Register attempts (10 per 10min)
 │           ├── authLimiter.js            # Password reset (5 per 15min)
 │           ├── aiLimiter.js              # Groq requests (10 per 8min per user)
 │           └── generalLimiter.js         # General API (100 per min)
@@ -1376,6 +1388,7 @@ import { getAIRecommendations } from "./services/ai/index.js";
 Rate limiting and error handling are modularized by concern:
 
 **Rate Limiters** (`rateLimiters/`):
+- `loginLimiter.js`: 10 requests per 10 minutes (prevents brute-force login and register spam)
 - `authLimiter.js`: 5 requests per 15 minutes (password reset attacks)
 - `aiLimiter.js`: **10 requests per 8 minutes per user** (Groq token conservation)
   - Allows 75 requests/hour, 1800/day per user

@@ -1,14 +1,14 @@
 import rateLimit, { ipKeyGenerator } from "express-rate-limit";
 
 /**
- * Auth endpoints rate limiter
- * Password reset: 5 requests per 15 minutes per IP
- * Prevents brute-force password reset attacks
+ * Login attempts rate limiter
+ * Limit: 10 requests per 10 minutes per IP
+ * Prevents brute-force login attacks
  */
-export const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // 5 requests per window
-  message: { error: "Too many password reset requests. Please try again later." },
+export const loginLimiter = rateLimit({
+  windowMs: 10 * 60 * 1000, // 10 minutes
+  max: 10, // 10 requests per window
+  message: { error: "Too many login attempts. Please try again in 10 minutes." },
   standardHeaders: true, // Return RateLimit-* headers
   legacyHeaders: false, // Disable X-RateLimit-* headers
   keyGenerator: (req) => {
@@ -16,7 +16,7 @@ export const authLimiter = rateLimit({
     return ipKeyGenerator(clientIp);
   },
   handler: (req, res, next, options) => {
-    console.warn(`[RATE LIMIT HIT] Password reset rate limit triggered for IP: ${req.ip || req.socket.remoteAddress}`);
+    console.warn(`[RATE LIMIT HIT] Login rate limit triggered for IP: ${req.ip || req.socket.remoteAddress}`);
     return res.status(options.statusCode).json(options.message);
   }
 });

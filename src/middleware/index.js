@@ -6,3 +6,4 @@ export { errorHandler, notFoundHandler } from "./errorHandler.js";
 export { authLimiter } from "./rateLimiters/authLimiter.js";
 export { aiLimiter } from "./rateLimiters/aiLimiter.js";
 export { generalLimiter } from "./rateLimiters/generalLimiter.js";
+export { loginLimiter } from "./rateLimiters/loginLimiter.js";

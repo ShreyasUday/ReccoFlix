@@ -2,13 +2,13 @@ import express from "express";
 import passport from "passport";
 import * as authController from "../controllers/authController.js";
 import { isGoogleAuthConfigured } from "../config/passport.js";
-import { authLimiter } from "../middleware/index.js";
+import { authLimiter, loginLimiter } from "../middleware/index.js";
 
 const router = express.Router();
 
 router.get("/me", authController.getMe);
-router.post("/login", authController.postLogin);
-router.post("/register", authController.postRegister);
+router.post("/login", loginLimiter, authController.postLogin);
+router.post("/register", loginLimiter, authController.postRegister);
 router.get("/logout", authController.logout);
 
 router.post("/forgot-password", authLimiter, authController.postForgotPassword);

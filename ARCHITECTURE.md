@@ -43,6 +43,7 @@ ReccoFlix/
 │   │   ├── authMiddleware.js        # JWT/session authentication checks
 │   │   ├── errorHandler.js          # Global error handling & logging
 │   │   └── rateLimiters/            # Rate limiting per endpoint type
+│   │       ├── loginLimiter.js      # 10 req/10min for logins
 │   │       ├── authLimiter.js       # 5 req/15min for password reset
 │   │       ├── aiLimiter.js         # 10 req/8min for AI endpoints
 │   │       └── generalLimiter.js    # 100 req/min for general API
@@ -134,38 +135,34 @@ export const kitsuFetch = async (ids) => {
 
 ReccoFlix uses **express-rate-limit** with IPv6-safe key generation to prevent abuse and manage API quotas.
 
-### 1. **Three-Tier Rate Limiting Strategy**
+### 1. **Four-Tier Rate Limiting Strategy**
 
 | Limiter | Endpoint | Limit | Window | Purpose |
 |---------|----------|-------|--------|---------|
+| **loginLimiter** | `/auth/login`, `/auth/register` | 10 req | 10 min | Prevent brute-force login/spam signups |
 | **authLimiter** | `/auth/forgot-password` | 5 req | 15 min | Prevent password reset brute-force |
 | **aiLimiter** | `/recommendations`, `/mood`, `/episodes` | 10 req | 8 min | Protect Groq API quota (500K tokens/mo) |
 | **generalLimiter** | All other `/api/*` | 100 req | 1 min | Baseline DDoS protection |
 
-### 2. **IPv6-Safe Implementation**
+### 2. **Proxy-Safe & IPv6-Safe Implementation**
 
-All rate limiters use the `ipKeyGenerator` helper function to properly handle IPv6 addresses:
+All rate limiters use a robust fallback chain to extract the client's actual IP address:
 
 ```javascript
-// ✅ CORRECT - Uses ipKeyGenerator for IPv6 support
-import rateLimit, { ipKeyGenerator } from "express-rate-limit";
-
+// ✅ CORRECT - Uses robust IP extraction chain for proxy & IPv6 support
 export const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 5,
-  keyGenerator: ipKeyGenerator,  // IPv6 safe
-});
-
-// ❌ WRONG - Would allow IPv6 users to bypass limits
-export const authLimiter = rateLimit({
-  keyGenerator: (req) => req.ip,  // Treats IPv6 variants as different users
+  keyGenerator: (req) => {
+    return req.ip || req.headers["x-forwarded-for"] || req.socket.remoteAddress || "unknown-ip";
+  },
 });
 ```
 
 **Technical Details:**
-- `req.ip` can return multiple formats for the same IPv6 user (full, compressed, mapped)
-- `ipKeyGenerator` normalizes these variants to prevent bypass
-- Falls back to `X-Forwarded-For` header when behind a proxy
+- Express naturally normalizes and compresses IPv6 strings natively.
+- Using `req.ip` automatically takes advantage of Express's `trust proxy` setting in production.
+- Falling back to `x-forwarded-for` and `req.socket.remoteAddress` guarantees accurate tracking in local development and proxy-based deployments.
 
 ### 3. **Smart Key Generation for AI Endpoints**
 
@@ -179,15 +176,15 @@ keyGenerator: (req) => {
   // Session users: limit by session ID
   if (req.sessionID) return req.sessionID;
   
-  // Anonymous users: limit by IP (IPv6 safe)
-  return ipKeyGenerator(req);
+  // Anonymous users: limit by IP
+  return req.ip || req.headers["x-forwarded-for"] || req.socket.remoteAddress || "unknown-ip";
 }
 ```
 
 **Benefits:**
-- Authenticated users can make multiple requests from different IPs
-- Prevents abuse of shared IPs (e.g., corporate networks)
-- Fallback to IP for unauthenticated users
+- Authenticated users can make multiple requests from different IPs without bottlenecking their individual limit pools.
+- Prevents abuse of shared IPs (e.g., corporate networks, VPNs) by grouping unauthenticated visitors by session ID first.
+- Fallback to IP for unauthenticated users.
 
 ### 4. **Groq API Quota Management**
 
@@ -543,7 +540,7 @@ Check actual token usage in Groq dashboard vs. estimated quota to adjust rate li
 
 ReccoFlix uses:
 - **Modular architecture** with clear separation of concerns
-- **Three-tier rate limiting** with IPv6-safe key generation
+- **Four-tier rate limiting** with IPv6-safe key generation
 - **Service layer abstraction** for reusable business logic
 - **Cache-first strategy** to minimize external API calls
 - **Centralized error handling** for consistent error responses
